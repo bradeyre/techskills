@@ -164,9 +164,30 @@ function render(){
     const w=document.createElement('div'); w.className='center';
     w.innerHTML=`<div class="card" style="max-width:520px">
       <h1>PR/TR Workshop Training</h1>
-      <p class="help">Sign in with Google to continue. Data is stored in Firestore.</p>
-      <div class="row" style="margin-top:12px"><button class="btn primary" id="googleBtn">Sign in with Google</button></div>
+      <p class="help">Sign in to continue. Data is stored in Firestore.</p>
+      <div class="grid g1" style="margin-top:12px">
+        <div><label>Email</label><input id="email" type="email" placeholder="admin" value="admin"></div>
+        <div><label>Password</label><input id="password" type="password" placeholder="••••••••" value="a123456"></div>
+        <div class="row">
+          <button class="btn primary" id="loginEmail">Sign in</button>
+          <button class="btn" id="registerEmail">Create account</button>
+          <div class="spacer"></div>
+          <button class="btn" id="googleBtn">Google</button>
+        </div>
+      </div>
     </div>`;
+    w.querySelector('#loginEmail').addEventListener('click', async ()=>{ 
+      const em = document.getElementById('email').value.trim();
+      const pw = document.getElementById('password').value;
+      try { await auth.signInWithEmailAndPassword(em, pw); }
+      catch (err) { alert('Sign-in failed: ' + err.message); }
+    });
+    w.querySelector('#registerEmail').addEventListener('click', async ()=>{ 
+      const em = document.getElementById('email').value.trim();
+      const pw = document.getElementById('password').value;
+      try { await auth.createUserWithEmailAndPassword(em, pw); }
+      catch (err) { alert('Register failed: ' + err.message); }
+    });
     w.querySelector('#googleBtn').addEventListener('click', async ()=>{ try{ const p=new firebase.auth.GoogleAuthProvider(); await auth.signInWithPopup(p);}catch(e){ alert('Sign-in failed: '+e.message);} });
     app.appendChild(w); return;
   }

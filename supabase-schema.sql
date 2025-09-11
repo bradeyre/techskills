@@ -1,7 +1,6 @@
 -- Supabase Database Schema for TechSkills Workshop System
 
--- Enable Row Level Security
-ALTER DATABASE postgres SET "app.jwt_secret" TO 'your-jwt-secret';
+-- Note: JWT secret is automatically managed by Supabase
 
 -- Teams table
 CREATE TABLE IF NOT EXISTS teams (

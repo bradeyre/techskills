@@ -48,6 +48,28 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
+  <script>
+// below your firebase.initializeApp(...)
+document.addEventListener('click', async (e)=>{
+  if(e.target.id==='loginEmail'){
+    const em = document.getElementById('email').value.trim();
+    const pw = document.getElementById('password').value;
+    try { await auth.signInWithEmailAndPassword(em, pw); } 
+    catch(err){ alert('Sign-in failed: '+err.message); }
+  }
+  if(e.target.id==='registerEmail'){
+    const em = document.getElementById('email').value.trim();
+    const pw = document.getElementById('password').value;
+    try { await auth.createUserWithEmailAndPassword(em, pw); } 
+    catch(err){ alert('Register failed: '+err.message); }
+  }
+  if(e.target.id==='googleBtn'){
+    try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+    catch(err){ alert('Google sign-in failed: '+err.message); }
+  }
+});
+</script>
+
 /* Collections */
 const col = { techs: ()=>db.collection('technicians'), tasks: ()=>db.collection('tasks'), assess: ()=>db.collection('assessments') };
 
@@ -140,12 +162,22 @@ function renderDash(){
       <div class="card"><div class="help">Avg Effective</div><div class="kpi">${avgAll}</div></div>
     </div>
     <div class="grid g2" style="margin-top:12px">
-      <div class="card">
-        <h2>Top Bottlenecks</h2>
-        <table class="table"><thead><tr><th>Task</th><th>Auth</th><th>Avg Eff</th></tr></thead>
-        <tbody>${coverage.sort((a,b)=>a.auth-b.auth).slice(0,10).map(c=>`<tr><td>${c.task.id} – ${esc(c.task.name)}</td><td>${c.auth}</td><td>${c.avg}</td></tr>`).join('')}</tbody>
-        </table>
-      </div>
+<div class="card" style="max-width:520px">
+  <h1>PR/TR Workshop Training</h1>
+  <p class="help">Sign in to continue. Data is stored in Firestore.</p>
+
+  <div class="grid g1" style="margin-top:8px">
+    <div><label>Email</label><input id="email" type="email" placeholder="you@company.com"></div>
+    <div><label>Password</label><input id="password" type="password" placeholder="••••••••"></div>
+    <div class="row">
+      <button class="btn primary" id="loginEmail">Sign in</button>
+      <button class="btn" id="registerEmail">Create account</button>
+      <div class="spacer"></div>
+      <button class="btn" id="googleBtn">Google</button>
+    </div>
+  </div>
+</div>
+
       <div class="card">
         <h2>Technician KPIs</h2>
         <table class="table"><thead><tr><th>Tech</th><th>Auth skills</th><th>Stale</th></tr></thead>

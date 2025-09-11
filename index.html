@@ -58,6 +58,8 @@ const auth = {
   signInWithEmailAndPassword: async (email, password) => {
     if (email === 'admin' && password === 'a123456') {
       auth.currentUser = { email: 'admin', displayName: 'Admin' };
+      state.user = auth.currentUser; // Update global state
+      localStorage.setItem('currentUser', JSON.stringify(auth.currentUser)); // Persist session
       return { user: auth.currentUser };
     }
     throw new Error('Invalid credentials');
@@ -65,15 +67,24 @@ const auth = {
   createUserWithEmailAndPassword: async (email, password) => {
     if (email === 'admin' && password === 'a123456') {
       auth.currentUser = { email: 'admin', displayName: 'Admin' };
+      state.user = auth.currentUser; // Update global state
+      localStorage.setItem('currentUser', JSON.stringify(auth.currentUser)); // Persist session
       return { user: auth.currentUser };
     }
     throw new Error('Invalid credentials');
   },
   signOut: () => {
     auth.currentUser = null;
+    state.user = null; // Update global state
+    localStorage.removeItem('currentUser'); // Clear session
   },
   onAuthStateChanged: (callback) => {
-    // Simulate auth state change
+    // Check localStorage for existing session
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      auth.currentUser = JSON.parse(savedUser);
+      state.user = auth.currentUser;
+    }
     setTimeout(() => callback(auth.currentUser), 100);
   }
 };
@@ -247,7 +258,7 @@ function render(){
     const w=document.createElement('div'); w.className='center';
     w.innerHTML=`<div class="card" style="max-width:520px">
       <h1>PR/TR Workshop Training</h1>
-      <p class="help">Sign in to continue. Data is stored in Firestore.</p>
+      <p class="help">Sign in to continue. Data is stored locally.</p>
       <div class="grid g1" style="margin-top:12px">
         <div><label>Email</label><input id="email" type="email" placeholder="admin" value="admin"></div>
         <div><label>Password</label><input id="password" type="password" placeholder="••••••••" value="a123456"></div>
@@ -257,17 +268,39 @@ function render(){
         </div>
       </div>
     </div>`;
-    w.querySelector('#loginEmail').addEventListener('click', async ()=>{ 
+    const loginHandler = async () => {
       const em = document.getElementById('email').value.trim();
       const pw = document.getElementById('password').value;
-      try { await auth.signInWithEmailAndPassword(em, pw); }
+      try { 
+        await auth.signInWithEmailAndPassword(em, pw);
+        render(); // Refresh the page after login
+      }
       catch (err) { alert('Sign-in failed: ' + err.message); }
-    });
-    w.querySelector('#registerEmail').addEventListener('click', async ()=>{ 
+    };
+    
+    const registerHandler = async () => {
       const em = document.getElementById('email').value.trim();
       const pw = document.getElementById('password').value;
-      try { await auth.createUserWithEmailAndPassword(em, pw); }
+      try { 
+        await auth.createUserWithEmailAndPassword(em, pw);
+        render(); // Refresh the page after registration
+      }
       catch (err) { alert('Register failed: ' + err.message); }
+    };
+    
+    w.querySelector('#loginEmail').addEventListener('click', loginHandler);
+    w.querySelector('#registerEmail').addEventListener('click', registerHandler);
+    
+    // Add Enter key support
+    w.querySelector('#password').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        loginHandler();
+      }
+    });
+    w.querySelector('#email').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('password').focus();
+      }
     });
     app.appendChild(w); return;
   }

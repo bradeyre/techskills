@@ -21,26 +21,7 @@ label{font-size:12px;color:var(--sub);display:block;margin-bottom:6px}
 .center{display:flex;justify-content:center;align-items:center;min-height:50vh;text-align:center}
 a.link{color:var(--brand);text-decoration:none}a.link:hover{text-decoration:underline}
 footer{color:var(--sub);font-size:12px;margin-top:24px}
-@media (max-width:900px){
-  .g4{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .g5{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .container{padding:12px}
-  .tabs{flex-direction:column;gap:4px}
-  .tab-btn{width:100%;text-align:center}
-  .row{flex-direction:column;gap:8px}
-  .spacer{display:none}
-  .table{font-size:12px}
-  .table th,.table td{padding:4px}
-}
-@media (max-width:600px){
-  .g2{grid-template-columns:1fr}
-  .g3{grid-template-columns:1fr}
-  .g4{grid-template-columns:1fr}
-  .g5{grid-template-columns:1fr}
-  .kpi{font-size:20px}
-  h1{font-size:20px}
-  h2{font-size:16px}
-}
+@media (max-width:900px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -89,13 +70,7 @@ document.addEventListener('click', async (e) => {
 </script>
 
 /* Collections */
-const col = { 
-  techs: ()=>db.collection('technicians'), 
-  tasks: ()=>db.collection('tasks'), 
-  assess: ()=>db.collection('assessments'),
-  teams: ()=>db.collection('teams'),
-  notifications: ()=>db.collection('notifications')
-};
+const col = { techs: ()=>db.collection('technicians'), tasks: ()=>db.collection('tasks'), assess: ()=>db.collection('assessments') };
 
 /* Utils */
 function esc(s){ return String(s ?? '').replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
@@ -107,53 +82,23 @@ function authz(e){ return e>=3 }
 function hue(e){ const h=Math.max(0,Math.min(120,e*24)); return `hsl(${h} 70% 50% / 0.28)`; }
 function groupBy(arr,fn){ const m={}; for(const it of arr){ const k=fn(it); (m[k]||(m[k]=[])).push(it) } return m; }
 
-/* Comprehensive Multi-Brand Repair Tasks */
+/* Seed tasks */
 const seedTasks=[
-  // Core Safety & Process
-  {id:'T001',category:'Core',subcategory:'Safety/Process',name:'ESD compliance & safe workspace',tier:'1 - Swap-level',targetMins:3,qcChecks:3,tools:'ESD mat, strap',risk:'Low',description:'Set up ESD, verify ground, inspect tools.',sopUrl:'',team:'Both'},
-  
-  // iPhone Repairs
-  {id:'T010',category:'iPhone',subcategory:'Battery',name:'iPhone Battery replacement (no error)',tier:'2 - Advanced',targetMins:25,qcChecks:8,tools:'Diagnostic battery, torque driver',risk:'Low',description:'Use diagnostic battery/programmer where lawful; calibrate.',sopUrl:'',team:'PR'},
-  {id:'T011',category:'iPhone',subcategory:'Display',name:'iPhone Display replacement + True Tone',tier:'2 - Advanced',targetMins:30,qcChecks:10,tools:'Programmer',risk:'Low',description:'Restore True Tone, dust control.',sopUrl:'',team:'PR'},
-  {id:'T012',category:'iPhone',subcategory:'Camera',name:'iPhone Camera replacement',tier:'2 - Advanced',targetMins:35,qcChecks:8,tools:'Torque driver, camera tester',risk:'Medium',description:'Replace camera module; test all functions.',sopUrl:'',team:'PR'},
-  {id:'T013',category:'iPhone',subcategory:'Logic Board',name:'iPhone Logic Board repair',tier:'3 - Board-level',targetMins:120,qcChecks:15,tools:'Microscope, hot air, multimeter',risk:'High',description:'Component-level repair; power management.',sopUrl:'',team:'PR'},
-  
-  // Samsung Galaxy Repairs
-  {id:'T020',category:'Samsung Galaxy',subcategory:'Display',name:'Samsung AMOLED + FP calibration',tier:'2 - Advanced',targetMins:40,qcChecks:8,tools:'Service app/jig',risk:'Medium',description:'Replace AMOLED; run fingerprint calibration.',sopUrl:'',team:'TR'},
-  {id:'T021',category:'Samsung Galaxy',subcategory:'Battery',name:'Samsung Battery replacement',tier:'2 - Advanced',targetMins:30,qcChecks:6,tools:'Heat mat, cards',risk:'Medium',description:'Remove back glass; replace battery.',sopUrl:'',team:'TR'},
-  {id:'T022',category:'Samsung Galaxy',subcategory:'Charging',name:'Samsung Charging port replacement',tier:'2 - Advanced',targetMins:25,qcChecks:5,tools:'Heat mat, cards',risk:'Low',description:'Replace USB-C port assembly.',sopUrl:'',team:'TR'},
-  
-  // iPad Repairs
-  {id:'T031',category:'iPad',subcategory:'Battery',name:'iPad Battery replacement',tier:'2 - Advanced',targetMins:40,qcChecks:8,tools:'Isopropyl, cards',risk:'Medium',description:'Remove screen safely; lift cells; reseal.',sopUrl:'',team:'PR'},
-  {id:'T032',category:'iPad',subcategory:'Display',name:'iPad Display replacement',tier:'2 - Advanced',targetMins:45,qcChecks:10,tools:'Heat mat, suction cups',risk:'Medium',description:'Remove display; replace with new unit.',sopUrl:'',team:'PR'},
-  {id:'T033',category:'iPad',subcategory:'Home Button',name:'iPad Home Button replacement',tier:'2 - Advanced',targetMins:30,qcChecks:6,tools:'Torque driver, adhesive',risk:'Low',description:'Replace home button; test Touch ID.',sopUrl:'',team:'PR'},
-  
-  // MacBook Repairs
-  {id:'T041',category:'MacBook',subcategory:'Keyboard',name:'MacBook Keyboard replacement',tier:'2 - Advanced',targetMins:120,qcChecks:10,tools:'Rivet kit, drivers',risk:'Medium',description:'Split top case; transfer rivets/screws; backlight check.',sopUrl:'',team:'PR'},
-  {id:'T042',category:'MacBook',subcategory:'Display',name:'MacBook Display replacement',tier:'2 - Advanced',targetMins:90,qcChecks:8,tools:'Torque driver, adhesive',risk:'Medium',description:'Replace display assembly; test all functions.',sopUrl:'',team:'PR'},
-  {id:'T043',category:'MacBook',subcategory:'Logic Board',name:'MacBook Logic Board repair',tier:'3 - Board-level',targetMins:180,qcChecks:20,tools:'Microscope, hot air, BGA rework',risk:'High',description:'Component-level repair; power management.',sopUrl:'',team:'PR'},
-  
-  // Gaming Console Repairs
-  {id:'T060',category:'PlayStation',subcategory:'HDMI',name:'PlayStation HDMI port replacement',tier:'3 - Board-level',targetMins:75,qcChecks:10,tools:'Hot air, microscope',risk:'High',description:'Hot air + iron; pad repair; retimer check.',sopUrl:'',team:'TR'},
-  {id:'T061',category:'Xbox',subcategory:'HDMI',name:'Xbox HDMI port replacement',tier:'3 - Board-level',targetMins:75,qcChecks:10,tools:'Hot air, microscope',risk:'High',description:'Hot air + iron; pad repair; retimer check.',sopUrl:'',team:'TR'},
-  {id:'T062',category:'Nintendo Switch',subcategory:'Joy-Con',name:'Nintendo Switch Joy-Con repair',tier:'2 - Advanced',targetMins:45,qcChecks:8,tools:'Torque driver, ribbon cables',risk:'Medium',description:'Fix drift, replace buttons, test all functions.',sopUrl:'',team:'TR'},
-  
-  // Apple Watch Repairs
-  {id:'T070',category:'Apple Watch',subcategory:'Display',name:'Apple Watch Screen replacement',tier:'2 - Advanced',targetMins:45,qcChecks:8,tools:'Heat mat, clamps',risk:'Medium',description:'Heat separation; seal replacement; water test.',sopUrl:'',team:'PR'},
-  {id:'T071',category:'Apple Watch',subcategory:'Battery',name:'Apple Watch Battery replacement',tier:'2 - Advanced',targetMins:35,qcChecks:6,tools:'Heat mat, cards',risk:'Medium',description:'Remove screen; replace battery; reseal.',sopUrl:'',team:'PR'},
-  
-  // Laptop Repairs
-  {id:'T052',category:'Windows Laptop',subcategory:'Power',name:'Laptop DC jack replacement',tier:'2 - Advanced',targetMins:45,qcChecks:6,tools:'Iron, wick, flux',risk:'Medium',description:'Desolder/solder jack; strain relief.',sopUrl:'',team:'TR'},
-  {id:'T053',category:'Windows Laptop',subcategory:'Keyboard',name:'Laptop Keyboard replacement',tier:'2 - Advanced',targetMins:60,qcChecks:8,tools:'Torque driver, ribbon cables',risk:'Low',description:'Remove keyboard; replace with new unit.',sopUrl:'',team:'TR'},
-  {id:'T054',category:'Windows Laptop',subcategory:'Display',name:'Laptop Display replacement',tier:'2 - Advanced',targetMins:50,qcChecks:6,tools:'Torque driver, adhesive',risk:'Low',description:'Replace display panel; test all functions.',sopUrl:'',team:'TR'},
-  
-  // Safety & Advanced
-  {id:'T090',category:'Safety',subcategory:'Electrical',name:'Mains isolation & capacitor discharge',tier:'2 - Advanced',targetMins:15,qcChecks:5,tools:'Insulated tools, HV resistor',risk:'High',description:'LOTO; verify isolation; discharge HV caps.',sopUrl:'',team:'Both'},
+  {id:'T001',category:'Core',subcategory:'Safety/Process',name:'ESD compliance & safe workspace',tier:'1 - Swap-level',targetMins:3,qcChecks:3,tools:'ESD mat, strap',risk:'Low',description:'Set up ESD, verify ground, inspect tools.',sopUrl:''},
+  {id:'T010',category:'Phone - iPhone',subcategory:'Battery',name:'Battery replacement (no error)',tier:'2 - Advanced',targetMins:25,qcChecks:8,tools:'Diagnostic battery, torque driver',risk:'Low',description:'Use diagnostic battery/programmer where lawful; calibrate.',sopUrl:''},
+  {id:'T011',category:'Phone - iPhone',subcategory:'Display',name:'Display replacement + True Tone',tier:'2 - Advanced',targetMins:30,qcChecks:10,tools:'Programmer',risk:'Low',description:'Restore True Tone, dust control.',sopUrl:''},
+  {id:'T020',category:'Phone - Android',subcategory:'Display',name:'AMOLED + FP calibration',tier:'2 - Advanced',targetMins:40,qcChecks:8,tools:'Service app/jig',risk:'Medium',description:'Replace AMOLED; run fingerprint calibration.',sopUrl:''},
+  {id:'T031',category:'Tablet - iPad',subcategory:'Battery',name:'Battery replacement',tier:'2 - Advanced',targetMins:40,qcChecks:8,tools:'Isopropyl, cards',risk:'Medium',description:'Remove screen safely; lift cells; reseal.',sopUrl:''},
+  {id:'T041',category:'MacBook',subcategory:'Keyboard',name:'Keyboard-only replacement',tier:'2 - Advanced',targetMins:120,qcChecks:10,tools:'Rivet kit, drivers',risk:'Medium',description:'Split top case; transfer rivets/screws; backlight check.',sopUrl:''},
+  {id:'T052',category:'Laptop - PC',subcategory:'Power',name:'DC jack replacement (through-hole)',tier:'2 - Advanced',targetMins:45,qcChecks:6,tools:'Iron, wick, flux',risk:'Medium',description:'Desolder/solder jack; strain relief.',sopUrl:''},
+  {id:'T060',category:'Console',subcategory:'HDMI',name:'Console HDMI port replacement',tier:'3 - Board-level',targetMins:75,qcChecks:10,tools:'Hot air, microscope',risk:'High',description:'Hot air + iron; pad repair; retimer check.',sopUrl:''},
+  {id:'T070',category:'Wearable',subcategory:'Apple Watch',name:'Screen replacement',tier:'2 - Advanced',targetMins:45,qcChecks:8,tools:'Heat mat, clamps',risk:'Medium',description:'Heat separation; seal replacement; water test.',sopUrl:''},
+  {id:'T090',category:'Appliance - Small',subcategory:'Safety',name:'Mains isolation & capacitor discharge',tier:'2 - Advanced',targetMins:15,qcChecks:5,tools:'Insulated tools, HV resistor',risk:'High',description:'LOTO; verify isolation; discharge HV caps.',sopUrl:''},
 ];
 
 /* State */
-let state={ user:null, techs:[], tasks:[], assess:[], teams:[], notifications:[], selectedTeam:'all' };
-let unsub={ techs:null, tasks:null, assess:null, teams:null, notifications:null };
+let state={ user:null, techs:[], tasks:[], assess:[] };
+let unsub={ techs:null, tasks:null, assess:null };
 
 /* App shell */
 const app=document.getElementById('app');
@@ -173,13 +118,8 @@ function render(){
   head.innerHTML=`<h1>PR/TR Workshop Training</h1>
     <span class="badge">Signed in as ${esc(state.user.displayName||state.user.email)}</span>
     <div class="spacer"></div>
-    <select id="teamFilter" class="btn" style="margin-right:8px">
-      <option value="all">All Teams</option>
-      <option value="TR">TR Team</option>
-      <option value="PR">PR Team</option>
-    </select>
     <button class="btn" id="exportBtn">Export JSON</button>
-    <button class="btn" id="seedBtn">Seed Tasks</button>
+    <button class="btn" id="seedBtn">Seed 10 tasks</button>
     <button class="btn ghost" id="signOutBtn">Sign out</button>
     <input id="importFile" type="file" accept="application/json" hidden/>
     <button class="btn" id="importBtn">Import JSON</button>`;
@@ -188,47 +128,31 @@ function render(){
   head.querySelector('#importBtn').addEventListener('click', ()=>head.querySelector('#importFile').click());
   head.querySelector('#importFile').addEventListener('change', importJSON);
   head.querySelector('#seedBtn').addEventListener('click', seedCatalog);
-  head.querySelector('#teamFilter').addEventListener('change', (e)=>{ state.selectedTeam=e.target.value; render(); });
   app.appendChild(head);
 
   const tabs=document.createElement('div'); tabs.className='tabs';
   tabs.innerHTML=`<button class='tab-btn active' data-tab='dash'>Dashboard</button>
-    <button class='tab-btn' data-tab='teams'>Teams</button>
     <button class='tab-btn' data-tab='techs'>Technicians</button>
     <button class='tab-btn' data-tab='tasks'>Task Catalog</button>
     <button class='tab-btn' data-tab='assess'>Assessments</button>
     <button class='tab-btn' data-tab='matrix'>Matrix</button>`;
   app.appendChild(tabs);
 
-  const sections = ['dash','teams','techs','tasks','assess','matrix'].reduce((m,t)=>{ const s=document.createElement('section'); s.id='tab-'+t; s.className='card'; if(t!=='dash') s.hidden=true; app.appendChild(s); m[t]=s; return m; },{});
-  tabs.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{ tabs.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); ['dash','teams','techs','tasks','assess','matrix'].forEach(t=>sections[t].hidden=(t!==btn.dataset.tab)); show(btn.dataset.tab); }));
+  const sections = ['dash','techs','tasks','assess','matrix'].reduce((m,t)=>{ const s=document.createElement('section'); s.id='tab-'+t; s.className='card'; if(t!=='dash') s.hidden=true; app.appendChild(s); m[t]=s; return m; },{});
+  tabs.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{ tabs.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); ['dash','techs','tasks','assess','matrix'].forEach(t=>sections[t].hidden=(t!==btn.dataset.tab)); show(btn.dataset.tab); }));
   show('dash');
 }
 
 /* Tab content */
-function show(tab){ if(tab==='dash') renderDash(); if(tab==='teams') renderTeams(); if(tab==='techs') renderTechs(); if(tab==='tasks') renderTasks(); if(tab==='assess') renderAssess(); if(tab==='matrix') renderMatrix(); }
+function show(tab){ if(tab==='dash') renderDash(); if(tab==='techs') renderTechs(); if(tab==='tasks') renderTasks(); if(tab==='assess') renderAssess(); if(tab==='matrix') renderMatrix(); }
 
 function renderDash(){
   const el=document.getElementById('tab-dash');
-  const T=state.tasks, A=state.assess, X=state.selectedTeam==='all'?state.techs:state.techs.filter(t=>t.team===state.selectedTeam);
+  const T=state.tasks, A=state.assess, X=state.techs;
   const byTech = groupBy(A,a=>a.techId), byTask = groupBy(A,a=>a.taskId);
   const coverage = T.map(task=>{ const rows=(byTask[task.id]||[]), effs=rows.map(r=>eff(r.level,r.lastPerformed)); return {task, auth: effs.filter(e=>e>=3).length, avg: effs.length? (effs.reduce((a,b)=>a+b,0)/effs.length).toFixed(2):'0.00'}; });
   const pct = T.length ? Math.round(100*coverage.filter(c=>c.auth>=2).length/T.length) : 0;
   const avgAll = A.length? (A.map(a=>eff(a.level,a.lastPerformed)).reduce((a,b)=>a+b,0)/A.length).toFixed(2):'0.00';
-  // Generate reminders
-  const reminders = [];
-  for(const tech of X){
-    const rows = byTech[tech.id] || [];
-    for(const assess of rows){
-      const days = daysBetween(assess.lastPerformed);
-      if(days > 90){
-        reminders.push({type:'stale',tech:tech.name,task:state.tasks.find(t=>t.id===assess.taskId)?.name||assess.taskId,days});
-      } else if(days > 60){
-        reminders.push({type:'warning',tech:tech.name,task:state.tasks.find(t=>t.id===assess.taskId)?.name||assess.taskId,days});
-      }
-    }
-  }
-  
   el.innerHTML=`
     <div class="grid g4">
       <div class="card"><div class="help">Technicians</div><div class="kpi">${X.length}</div></div>
@@ -239,63 +163,31 @@ function renderDash(){
     <div class="grid g2" style="margin-top:12px">
       <div class="card">
         <h2>Technician KPIs</h2>
-        <table class="table"><thead><tr><th>Tech</th><th>Team</th><th>Auth skills</th><th>Stale</th></tr></thead>
+        <table class="table"><thead><tr><th>Tech</th><th>Auth skills</th><th>Stale</th></tr></thead>
         <tbody>${
           X.map(t=>{
             const rows=(byTech[t.id]||[]);
             const effs=rows.map(r=>eff(r.level,r.lastPerformed));
             const auths=effs.filter(e=>e>=3).length;
             const stale=rows.filter(r=>daysBetween(r.lastPerformed)>90).length;
-            return `<tr><td>${esc(t.name||'')}</td><td><span class="badge">${esc(t.team||'Unassigned')}</span></td><td>${auths}</td><td>${stale}</td></tr>`;
+            return `<tr><td>${esc(t.name||'')}</td><td>${auths}</td><td>${stale}</td></tr>`;
           }).join('')
         }</tbody>
         </table>
       </div>
-      <div class="card">
-        <h2>Training Reminders</h2>
-        <div style="max-height:300px;overflow-y:auto">
-          ${reminders.length === 0 ? '<p class="help">No reminders at this time.</p>' : 
-            reminders.map(r=>`<div class="row" style="margin-bottom:8px;padding:8px;background:${r.type==='stale'?'var(--bad)':'var(--warn)'};border-radius:8px">
-              <strong>${esc(r.tech)}</strong><br>
-              <small>${esc(r.task)} - ${r.days} days since last practice</small>
-            </div>`).join('')
-          }
-        </div>
-      </div>
     </div>`;
-}
-
-function renderTeams(){
-  const el=document.getElementById('tab-teams');
-  el.innerHTML = `<div class='row'><h2>Teams</h2><div class='spacer'></div><button class='btn primary' id='addTeam'>Add Team</button></div><div id='list' class='grid g2'></div>`;
-  el.querySelector('#addTeam').addEventListener('click', async()=>{ await col.teams().add({id:uid(),name:'New Team',type:'TR',description:'',createdAt:firebase.firestore.FieldValue.serverTimestamp()}) });
-  const host=el.querySelector('#list'); host.innerHTML='';
-  for(const t of state.teams){
-    const div=document.createElement('div'); div.className='card';
-    div.innerHTML=`
-      <div class='grid g3'>
-        <div><label>Team Name</label><input data-k='name' value='${escA(t.name||"")}'></div>
-        <div><label>Type</label><select data-k='type'>${['TR','PR'].map(v=>`<option ${t.type===v?'selected':''}>${v}</option>`).join('')}</select></div>
-        <div><label>Description</label><input data-k='description' value='${escA(t.description||"")}'></div>
-      </div>
-      <div class='row' style='margin-top:8px'><div class='spacer'></div><button class='btn danger' data-del>Delete</button></div>`;
-    div.addEventListener('input', async e=>{ const k=e.target.dataset.k; if(!k) return; await col.teams().doc(t._id).update({[k]:e.target.value,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}); });
-    div.querySelector('[data-del]').addEventListener('click', async()=>{ if(!confirm('Delete team?')) return; await col.teams().doc(t._id).delete(); });
-    host.appendChild(div);
-  }
 }
 
 function renderTechs(){
   const el=document.getElementById('tab-techs');
   el.innerHTML = `<div class='row'><h2>Technicians</h2><div class='spacer'></div><button class='btn primary' id='addTech'>Add Tech</button></div><div id='list' class='grid'></div>`;
-  el.querySelector('#addTech').addEventListener('click', async()=>{ await col.techs().add({id:uid(),name:'New Technician',team:'TR',location:'',role:'',notes:'',createdAt:firebase.firestore.FieldValue.serverTimestamp()}) });
+  el.querySelector('#addTech').addEventListener('click', async()=>{ await col.techs().add({id:uid(),name:'New Technician',location:'',role:'',notes:'',createdAt:firebase.firestore.FieldValue.serverTimestamp()}) });
   const host=el.querySelector('#list'); host.innerHTML='';
   for(const t of state.techs){
     const div=document.createElement('div'); div.className='card';
     div.innerHTML=`
-      <div class='grid g5'>
+      <div class='grid g4'>
         <div><label>Name</label><input data-k='name' value='${escA(t.name||"")}'></div>
-        <div><label>Team</label><select data-k='team'>${['TR','PR'].map(v=>`<option ${t.team===v?'selected':''}>${v}</option>`).join('')}</select></div>
         <div><label>Location</label><input data-k='location' value='${escA(t.location||"")}'></div>
         <div><label>Role/Grade</label><input data-k='role' value='${escA(t.role||"")}'></div>
         <div><label>Notes</label><input data-k='notes' value='${escA(t.notes||"")}'></div>
@@ -377,23 +269,17 @@ function renderAssess(){
 
 function renderMatrix(){
   const el=document.getElementById('tab-matrix');
-  const filteredTechs = state.selectedTeam==='all'?state.techs:state.techs.filter(t=>t.team===state.selectedTeam);
-  const filteredTasks = state.selectedTeam==='all'?state.tasks:state.tasks.filter(t=>t.team===state.selectedTeam||t.team==='Both');
-  
-  let html='<div class="help" style="margin-bottom:8px">Heatmap shows Effective Level (0–5). Green = Authorized (≥3), Red = Stale (>90 days). Edit in Assessments.</div>';
+  let html='<div class="help" style="margin-bottom:8px">Heatmap shows Effective Level (0–5). Edit in Assessments.</div>';
   html+='<div style="overflow:auto;border:1px solid var(--border);border-radius:12px">';
-  html+='<table class="table"><thead><tr><th>Technician</th><th>Team</th>';
-  for(const task of filteredTasks) html+=`<th title="${esc(task.description)}">${task.id}<br><small>${esc(task.name)}</small></th>`;
+  html+='<table class="table"><thead><tr><th>Technician</th>';
+  for(const task of state.tasks) html+=`<th>${task.id} – ${esc(task.name)}</th>`;
   html+='</tr></thead><tbody>';
-  for(const tech of filteredTechs){
-    html+=`<tr><td><strong>${esc(tech.name||'')}</strong></td><td><span class="badge">${esc(tech.team||'Unassigned')}</span></td>`;
-    for(const task of filteredTasks){
+  for(const tech of state.techs){
+    html+=`<tr><td><strong>${esc(tech.name||'')}</strong></td>`;
+    for(const task of state.tasks){
       const rows=state.assess.filter(a=>a.techId===tech.id && a.taskId===task.id).sort((a,b)=>new Date(b.assessmentDate||0)-new Date(a.assessmentDate||0));
       const a=rows[0]; const e=a? eff(a.level,a.lastPerformed):0;
-      const isStale = a && daysBetween(a.lastPerformed)>90;
-      const isAuthorized = e>=3;
-      const cellClass = isStale ? 'danger' : (isAuthorized ? 'ok' : '');
-      html+=`<td class="${cellClass}" title="Level: ${a?.level||0}, Last: ${a?.lastPerformed||'Never'}, Effective: ${e}"><span class='pill' style='background:${hue(e)}'></span>${e}</td>`;
+      html+=`<td><span class='pill' style='background:${hue(e)}'></span>${e}</td>`;
     }
     html+='</tr>';
   }
@@ -453,11 +339,10 @@ async function seedCatalog(){
 
 /* Listeners */
 function attach(){
-  if(unsub.techs) unsub.techs(); if(unsub.tasks) unsub.tasks(); if(unsub.assess) unsub.assess(); if(unsub.teams) unsub.teams();
-  unsub.techs = col.techs().orderBy('name').onSnapshot(s=>{ state.techs = s.docs.map(d=>({_id:d.id, ...d.data()})); if(!document.getElementById('tab-techs').hidden) renderTechs(); renderDash(); renderMatrix(); });
+  if(unsub.techs) unsub.techs(); if(unsub.tasks) unsub.tasks(); if(unsub.assess) unsub.assess();
+  unsub.techs = col.techs().orderBy('name').onSnapshot(s=>{ state.techs = s.docs.map(d=>({_id:d.id, ...d.data()})); if(!document.getElementById('tab-techs').hidden) renderTechs(); });
   unsub.tasks = col.tasks().orderBy('id').onSnapshot(s=>{ state.tasks = s.docs.map(d=>({_id:d.id, ...d.data()})); if(!document.getElementById('tab-tasks').hidden) renderTasks(); renderDash(); renderMatrix(); });
   unsub.assess = col.assess().orderBy('assessmentDate','desc').onSnapshot(s=>{ state.assess = s.docs.map(d=>({_id:d.id, ...d.data()})); if(!document.getElementById('tab-assess').hidden) renderAssess(); renderDash(); renderMatrix(); });
-  unsub.teams = col.teams().orderBy('name').onSnapshot(s=>{ state.teams = s.docs.map(d=>({_id:d.id, ...d.data()})); if(!document.getElementById('tab-teams').hidden) renderTeams(); });
 }
 
 auth.onAuthStateChanged(u=>{ state.user=u; if(u) attach(); render(); });

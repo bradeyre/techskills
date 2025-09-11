@@ -1,13 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="utf-8"><title>PR/TR Workshop Training</title></head>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PR/TR Workshop Training</title>
+<style>
+:root{--bg:#0b0d14;--card:#121624;--muted:#171b2b;--text:#e9eef8;--sub:#b8c4e0;--brand:#6ea8fe;--border:#2a2f3a;--ok:#40c057;--warn:#f08c00;--bad:#fa5252}
+*{box-sizing:border-box}html,body{height:100%}body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,sans-serif;background:linear-gradient(180deg,#0a0c13,#0f1320);color:var(--text)}
+.container{max-width:1100px;margin:0 auto;padding:24px}h1{font-size:24px;margin:0 0 12px}h2{font-size:18px;margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,.25);margin-bottom:12px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.spacer{flex:1}
+.btn{appearance:none;border:1px solid var(--border);background:var(--muted);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:600}
+.btn:hover{filter:brightness(1.05)}.btn.primary{background:var(--brand);border-color:transparent;color:#081226}.btn.ghost{background:transparent}.btn.danger{background:color-mix(in oklab,var(--bad) 25%,transparent)}
+input,select,textarea{width:100%;padding:8px 10px;border-radius:10px;background:#0d1020;border:1px solid var(--border);color:var(--text)}
+label{font-size:12px;color:var(--sub);display:block;margin-bottom:6px}
+.grid{display:grid;gap:10px}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}.g5{grid-template-columns:repeat(5,minmax(0,1fr))}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}.tab-btn{padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--muted);cursor:pointer}.tab-btn.active{background:var(--brand);color:#081226;border-color:transparent}
+.table{width:100%;border-collapse:collapse}.table th,.table td{padding:8px;border-top:1px solid var(--border);text-align:left;vertical-align:top}.table th{color:var(--sub);font-weight:600}
+.kpi{font-size:28px;font-weight:800}.help{color:var(--sub);font-size:13px}.badge{display:inline-block;padding:.15rem .5rem;border-radius:999px;font-size:12px;background:var(--muted);color:var(--text)}.pill{display:inline-block;width:28px;height:18px;border-radius:6px;margin-right:6px}
+.center{display:flex;justify-content:center;align-items:center;min-height:50vh;text-align:center}
+a.link{color:var(--brand);text-decoration:none}a.link:hover{text-decoration:underline}
+footer{color:var(--sub);font-size:12px;margin-top:24px}
+@media (max-width:900px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
 <body>
-<h1>PR/TR Workshop Training App</h1>
-<p>This is the preconfigured app with Firebase integration. Push to GitHub and deploy on Vercel.</p>
+<div class="container" id="app"></div>
+
+<!-- Firebase (Compat SDK for simplest deploy) -->
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
+
 <script>
+/* Firebase config (your values) */
 const firebaseConfig = {
   apiKey: "AIzaSyAyw3eF56LjW3UYisuZJ6Y_NWb3yCYQZ8",
   authDomain: "tech-skills-9a846.firebaseapp.com",
@@ -17,6 +43,295 @@ const firebaseConfig = {
   appId: "1:1052706446287:web:9c4ef2f3c0ad2095e6d0ba",
   measurementId: "G-G1M9ELL1B8"
 };
+
 firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+/* Collections */
+const col = { techs: ()=>db.collection('technicians'), tasks: ()=>db.collection('tasks'), assess: ()=>db.collection('assessments') };
+
+/* Utils */
+function esc(s){ return String(s ?? '').replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+function escA(s){ return String(s ?? '').replace(/"/g,'&quot;'); }
+function uid(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
+function daysBetween(iso){ if(!iso) return Infinity; const d = Math.floor((Date.now()-new Date(iso).getTime())/86400000); return isNaN(d)?Infinity:d; }
+function eff(level,last){ const stale = daysBetween(last)>90?1:0; return Math.max(0,(Number(level)||0)-stale); }
+function authz(e){ return e>=3 }
+function hue(e){ const h=Math.max(0,Math.min(120,e*24)); return `hsl(${h} 70% 50% / 0.28)`; }
+function groupBy(arr,fn){ const m={}; for(const it of arr){ const k=fn(it); (m[k]||(m[k]=[])).push(it) } return m; }
+
+/* Seed tasks */
+const seedTasks=[
+  {id:'T001',category:'Core',subcategory:'Safety/Process',name:'ESD compliance & safe workspace',tier:'1 - Swap-level',targetMins:3,qcChecks:3,tools:'ESD mat, strap',risk:'Low',description:'Set up ESD, verify ground, inspect tools.',sopUrl:''},
+  {id:'T010',category:'Phone - iPhone',subcategory:'Battery',name:'Battery replacement (no error)',tier:'2 - Advanced',targetMins:25,qcChecks:8,tools:'Diagnostic battery, torque driver',risk:'Low',description:'Use diagnostic battery/programmer where lawful; calibrate.',sopUrl:''},
+  {id:'T011',category:'Phone - iPhone',subcategory:'Display',name:'Display replacement + True Tone',tier:'2 - Advanced',targetMins:30,qcChecks:10,tools:'Programmer',risk:'Low',description:'Restore True Tone, dust control.',sopUrl:''},
+  {id:'T020',category:'Phone - Android',subcategory:'Display',name:'AMOLED + FP calibration',tier:'2 - Advanced',targetMins:40,qcChecks:8,tools:'Service app/jig',risk:'Medium',description:'Replace AMOLED; run fingerprint calibration.',sopUrl:''},
+  {id:'T031',category:'Tablet - iPad',subcategory:'Battery',name:'Battery replacement',tier:'2 - Advanced',targetMins:40,qcChecks:8,tools:'Isopropyl, cards',risk:'Medium',description:'Remove screen safely; lift cells; reseal.',sopUrl:''},
+  {id:'T041',category:'MacBook',subcategory:'Keyboard',name:'Keyboard-only replacement',tier:'2 - Advanced',targetMins:120,qcChecks:10,tools:'Rivet kit, drivers',risk:'Medium',description:'Split top case; transfer rivets/screws; backlight check.',sopUrl:''},
+  {id:'T052',category:'Laptop - PC',subcategory:'Power',name:'DC jack replacement (through-hole)',tier:'2 - Advanced',targetMins:45,qcChecks:6,tools:'Iron, wick, flux',risk:'Medium',description:'Desolder/solder jack; strain relief.',sopUrl:''},
+  {id:'T060',category:'Console',subcategory:'HDMI',name:'Console HDMI port replacement',tier:'3 - Board-level',targetMins:75,qcChecks:10,tools:'Hot air, microscope',risk:'High',description:'Hot air + iron; pad repair; retimer check.',sopUrl:''},
+  {id:'T070',category:'Wearable',subcategory:'Apple Watch',name:'Screen replacement',tier:'2 - Advanced',targetMins:45,qcChecks:8,tools:'Heat mat, clamps',risk:'Medium',description:'Heat separation; seal replacement; water test.',sopUrl:''},
+  {id:'T090',category:'Appliance - Small',subcategory:'Safety',name:'Mains isolation & capacitor discharge',tier:'2 - Advanced',targetMins:15,qcChecks:5,tools:'Insulated tools, HV resistor',risk:'High',description:'LOTO; verify isolation; discharge HV caps.',sopUrl:''},
+];
+
+/* State */
+let state={ user:null, techs:[], tasks:[], assess:[] };
+let unsub={ techs:null, tasks:null, assess:null };
+
+/* App shell */
+const app=document.getElementById('app');
+function render(){
+  app.innerHTML='';
+  if(!state.user){
+    const w=document.createElement('div'); w.className='center';
+    w.innerHTML=`<div class="card" style="max-width:520px">
+      <h1>PR/TR Workshop Training</h1>
+      <p class="help">Sign in with Google to continue. Data is stored in Firestore.</p>
+      <div class="row" style="margin-top:12px"><button class="btn primary" id="googleBtn">Sign in with Google</button></div>
+    </div>`;
+    w.querySelector('#googleBtn').addEventListener('click', async ()=>{ try{ const p=new firebase.auth.GoogleAuthProvider(); await auth.signInWithPopup(p);}catch(e){ alert('Sign-in failed: '+e.message);} });
+    app.appendChild(w); return;
+  }
+  const head=document.createElement('div'); head.className='row';
+  head.innerHTML=`<h1>PR/TR Workshop Training</h1>
+    <span class="badge">Signed in as ${esc(state.user.displayName||state.user.email)}</span>
+    <div class="spacer"></div>
+    <button class="btn" id="exportBtn">Export JSON</button>
+    <button class="btn" id="seedBtn">Seed 10 tasks</button>
+    <button class="btn ghost" id="signOutBtn">Sign out</button>
+    <input id="importFile" type="file" accept="application/json" hidden/>
+    <button class="btn" id="importBtn">Import JSON</button>`;
+  head.querySelector('#signOutBtn').addEventListener('click', ()=>auth.signOut());
+  head.querySelector('#exportBtn').addEventListener('click', exportJSON);
+  head.querySelector('#importBtn').addEventListener('click', ()=>head.querySelector('#importFile').click());
+  head.querySelector('#importFile').addEventListener('change', importJSON);
+  head.querySelector('#seedBtn').addEventListener('click', seedCatalog);
+  app.appendChild(head);
+
+  const tabs=document.createElement('div'); tabs.className='tabs';
+  tabs.innerHTML=`<button class='tab-btn active' data-tab='dash'>Dashboard</button>
+    <button class='tab-btn' data-tab='techs'>Technicians</button>
+    <button class='tab-btn' data-tab='tasks'>Task Catalog</button>
+    <button class='tab-btn' data-tab='assess'>Assessments</button>
+    <button class='tab-btn' data-tab='matrix'>Matrix</button>`;
+  app.appendChild(tabs);
+
+  const sections = ['dash','techs','tasks','assess','matrix'].reduce((m,t)=>{ const s=document.createElement('section'); s.id='tab-'+t; s.className='card'; if(t!=='dash') s.hidden=true; app.appendChild(s); m[t]=s; return m; },{});
+  tabs.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{ tabs.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); ['dash','techs','tasks','assess','matrix'].forEach(t=>sections[t].hidden=(t!==btn.dataset.tab)); show(btn.dataset.tab); }));
+  show('dash');
+}
+
+/* Tab content */
+function show(tab){ if(tab==='dash') renderDash(); if(tab==='techs') renderTechs(); if(tab==='tasks') renderTasks(); if(tab==='assess') renderAssess(); if(tab==='matrix') renderMatrix(); }
+
+function renderDash(){
+  const el=document.getElementById('tab-dash');
+  const T=state.tasks, A=state.assess, X=state.techs;
+  const byTech = groupBy(A,a=>a.techId), byTask = groupBy(A,a=>a.taskId);
+  const coverage = T.map(task=>{ const rows=(byTask[task.id]||[]), effs=rows.map(r=>eff(r.level,r.lastPerformed)); return {task, auth: effs.filter(e=>e>=3).length, avg: effs.length? (effs.reduce((a,b)=>a+b,0)/effs.length).toFixed(2):'0.00'}; });
+  const pct = T.length ? Math.round(100*coverage.filter(c=>c.auth>=2).length/T.length) : 0;
+  const avgAll = A.length? (A.map(a=>eff(a.level,a.lastPerformed)).reduce((a,b)=>a+b,0)/A.length).toFixed(2):'0.00';
+  el.innerHTML=`
+    <div class="grid g4">
+      <div class="card"><div class="help">Technicians</div><div class="kpi">${X.length}</div></div>
+      <div class="card"><div class="help">Tasks</div><div class="kpi">${T.length}</div></div>
+      <div class="card"><div class="help">Coverage ≥ 2 authorised</div><div class="kpi">${pct}%</div></div>
+      <div class="card"><div class="help">Avg Effective</div><div class="kpi">${avgAll}</div></div>
+    </div>
+    <div class="grid g2" style="margin-top:12px">
+      <div class="card">
+        <h2>Top Bottlenecks</h2>
+        <table class="table"><thead><tr><th>Task</th><th>Auth</th><th>Avg Eff</th></tr></thead>
+        <tbody>${coverage.sort((a,b)=>a.auth-b.auth).slice(0,10).map(c=>`<tr><td>${c.task.id} – ${esc(c.task.name)}</td><td>${c.auth}</td><td>${c.avg}</td></tr>`).join('')}</tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h2>Technician KPIs</h2>
+        <table class="table"><thead><tr><th>Tech</th><th>Auth skills</th><th>Stale</th></tr></thead>
+        <tbody>${
+          X.map(t=>{
+            const rows=(byTech[t.id]||[]);
+            const effs=rows.map(r=>eff(r.level,r.lastPerformed));
+            const auths=effs.filter(e=>e>=3).length;
+            const stale=rows.filter(r=>daysBetween(r.lastPerformed)>90).length;
+            return `<tr><td>${esc(t.name||'')}</td><td>${auths}</td><td>${stale}</td></tr>`;
+          }).join('')
+        }</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function renderTechs(){
+  const el=document.getElementById('tab-techs');
+  el.innerHTML = `<div class='row'><h2>Technicians</h2><div class='spacer'></div><button class='btn primary' id='addTech'>Add Tech</button></div><div id='list' class='grid'></div>`;
+  el.querySelector('#addTech').addEventListener('click', async()=>{ await col.techs().add({id:uid(),name:'New Technician',location:'',role:'',notes:'',createdAt:firebase.firestore.FieldValue.serverTimestamp()}) });
+  const host=el.querySelector('#list'); host.innerHTML='';
+  for(const t of state.techs){
+    const div=document.createElement('div'); div.className='card';
+    div.innerHTML=`
+      <div class='grid g4'>
+        <div><label>Name</label><input data-k='name' value='${escA(t.name||"")}'></div>
+        <div><label>Location</label><input data-k='location' value='${escA(t.location||"")}'></div>
+        <div><label>Role/Grade</label><input data-k='role' value='${escA(t.role||"")}'></div>
+        <div><label>Notes</label><input data-k='notes' value='${escA(t.notes||"")}'></div>
+      </div>
+      <div class='row' style='margin-top:8px'><div class='spacer'></div><button class='btn danger' data-del>Delete</button></div>`;
+    div.addEventListener('input', async e=>{ const k=e.target.dataset.k; if(!k) return; await col.techs().doc(t._id).update({[k]:e.target.value,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}); });
+    div.querySelector('[data-del]').addEventListener('click', async()=>{ if(!confirm('Delete tech and related assessments?')) return; await col.techs().doc(t._id).delete(); const snap=await col.assess().where('techId','==',t.id).get(); const b=db.batch(); snap.forEach(d=>b.delete(d.ref)); await b.commit();});
+    host.appendChild(div);
+  }
+}
+
+function renderTasks(){
+  const el=document.getElementById('tab-tasks');
+  el.innerHTML = `<div class='row'><h2>Task Catalog</h2><div class='spacer'></div><button class='btn' id='seed'>Seed tasks</button><button class='btn primary' id='addTask'>Add Task</button></div><div id='list' class='grid'></div>`;
+  el.querySelector('#seed').addEventListener('click', seedCatalog);
+  el.querySelector('#addTask').addEventListener('click', async()=>{ await col.tasks().add({id:'T'+(Math.random()*100000|0),category:'Core',subcategory:'',name:'New Task',tier:'1 - Swap-level',risk:'Low',targetMins:0,qcChecks:0,tools:'',prerequisites:'',sopUrl:'',notes:'',createdAt:firebase.firestore.FieldValue.serverTimestamp()}) });
+  const host=el.querySelector('#list'); host.innerHTML='';
+  for(const t of state.tasks){
+    const div=document.createElement('div'); div.className='card';
+    div.innerHTML=`
+      <div class='grid g5'>
+        <div><label>TaskID</label><input data-k='id' value='${escA(t.id)}'></div>
+        <div><label>Category</label><input data-k='category' value='${escA(t.category||"")}'></div>
+        <div><label>Subcategory</label><input data-k='subcategory' value='${escA(t.subcategory||"")}'></div>
+        <div><label>Name</label><input data-k='name' value='${escA(t.name||"")}'></div>
+        <div><label>Tier</label><select data-k='tier'>
+          ${['1 - Swap-level','2 - Advanced','3 - Board-level'].map(v=>`<option ${t.tier===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      </div>
+      <div class='grid g3' style='margin-top:8px'>
+        <div><label>Target mins</label><input type='number' data-k='targetMins' value='${Number(t.targetMins||0)}'></div>
+        <div><label># QC checks</label><input type='number' data-k='qcChecks' value='${Number(t.qcChecks||0)}'></div>
+        <div><label>Risk</label><select data-k='risk'>${['Low','Medium','High'].map(v=>`<option ${t.risk===v?'selected':''}>${v}</option>`).join('')}</select></div>
+      </div>
+      <div class='grid g3' style='margin-top:8px'>
+        <div><label>Required tools</label><input data-k='tools' value='${escA(t.tools||"")}'></div>
+        <div><label>Prerequisites</label><input data-k='prerequisites' value='${escA(t.prerequisites||"")}'></div>
+        <div><label>SOP/Video URL</label><input data-k='sopUrl' value='${escA(t.sopUrl||"")}'></div>
+      </div>
+      <div style='margin-top:8px'><label>Description</label><textarea data-k='description' rows='2'>${esc(t.description||"")}</textarea></div>
+      <div class='row' style='margin-top:8px'><div class='spacer'></div><button class='btn danger' data-del>Delete</button></div>`;
+    div.addEventListener('input', async e=>{ const k=e.target.dataset.k; if(!k) return; let v=e.target.value; if(['targetMins','qcChecks'].includes(k)) v=Number(v||0); await col.tasks().doc(t._id).update({[k]:v,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}); });
+    div.querySelector('[data-del]').addEventListener('click', async()=>{ if(!confirm('Delete task and related assessments?')) return; await col.tasks().doc(t._id).delete(); const snap=await col.assess().where('taskId','==',t.id).get(); const b=db.batch(); snap.forEach(d=>b.delete(d.ref)); await b.commit(); });
+    host.appendChild(div);
+  }
+}
+
+function renderAssess(){
+  const el=document.getElementById('tab-assess');
+  el.innerHTML = `<div class='row'><h2>Assessments</h2><div class='spacer'></div><button class='btn primary' id='add'>Add Assessment</button></div><div id='list' class='grid'></div>`;
+  el.querySelector('#add').addEventListener('click', async()=>{ const techId=state.techs[0]?.id||''; const taskId=state.tasks[0]?.id||''; await col.assess().add({techId,taskId,level:0,observed:0,supervised:0,unsupervisedPass90:0,rework90:0,avgTime:0,lastPerformed:'',assessedBy:state.user.displayName||state.user.email,assessmentDate:new Date().toISOString().slice(0,10),createdAt:firebase.firestore.FieldValue.serverTimestamp()}) });
+  const host=el.querySelector('#list'); host.innerHTML='';
+  for(const a of state.assess){
+    const div=document.createElement('div'); div.className='card';
+    div.innerHTML=`
+      <div class='grid g5'>
+        <div><label>Technician</label><select data-k='techId'>${state.techs.map(t=>`<option value='${t.id}' ${a.techId===t.id?'selected':''}>${esc(t.name||'')}</option>`).join('')}</select></div>
+        <div><label>Task</label><select data-k='taskId'>${state.tasks.map(t=>`<option value='${t.id}' ${a.taskId===t.id?'selected':''}>${t.id} – ${esc(t.name||'')}</option>`).join('')}</select></div>
+        <div><label>Level</label><select data-k='level'>${[0,1,2,3,4,5].map(l=>`<option ${Number(a.level)===l?'selected':''}>${l}</option>`).join('')}</select></div>
+        <div><label>Last performed</label><input type='date' data-k='lastPerformed' value='${(a.lastPerformed||'').slice(0,10)}'></div>
+        <div><label>Assessment date</label><input type='date' data-k='assessmentDate' value='${(a.assessmentDate||'').slice(0,10)}'></div>
+      </div>
+      <div class='grid g5' style='margin-top:8px'>
+        <div><label>Observed</label><input type='number' data-k='observed' value='${Number(a.observed||0)}'></div>
+        <div><label>Supervised</label><input type='number' data-k='supervised' value='${Number(a.supervised||0)}'></div>
+        <div><label>Unsupervised passes (90d)</label><input type='number' data-k='unsupervisedPass90' value='${Number(a.unsupervisedPass90||0)}'></div>
+        <div><label>Rework (90d)</label><input type='number' data-k='rework90' value='${Number(a.rework90||0)}'></div>
+        <div><label>Avg time (min)</label><input type='number' data-k='avgTime' value='${Number(a.avgTime||0)}'></div>
+      </div>
+      <div class='row' style='margin-top:8px'>
+        <span class='badge'>Effective: ${eff(a.level,a.lastPerformed)} ${authz(eff(a.level,a.lastPerformed))?'· Authorised':''}</span>
+        <div class='spacer'></div><button class='btn danger' data-del>Delete</button>
+      </div>`;
+    div.addEventListener('input', async e=>{ const k=e.target.dataset.k; if(!k) return; let v=e.target.value; if(['observed','supervised','unsupervisedPass90','rework90','avgTime','level'].includes(k)) v=Number(v||0); await col.assess().doc(a._id).update({[k]:v,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}); });
+    div.querySelector('[data-del]').addEventListener('click', async()=>{ if(!confirm('Delete assessment?')) return; await col.assess().doc(a._id).delete(); });
+    host.appendChild(div);
+  }
+}
+
+function renderMatrix(){
+  const el=document.getElementById('tab-matrix');
+  let html='<div class="help" style="margin-bottom:8px">Heatmap shows Effective Level (0–5). Edit in Assessments.</div>';
+  html+='<div style="overflow:auto;border:1px solid var(--border);border-radius:12px">';
+  html+='<table class="table"><thead><tr><th>Technician</th>';
+  for(const task of state.tasks) html+=`<th>${task.id} – ${esc(task.name)}</th>`;
+  html+='</tr></thead><tbody>';
+  for(const tech of state.techs){
+    html+=`<tr><td><strong>${esc(tech.name||'')}</strong></td>`;
+    for(const task of state.tasks){
+      const rows=state.assess.filter(a=>a.techId===tech.id && a.taskId===task.id).sort((a,b)=>new Date(b.assessmentDate||0)-new Date(a.assessmentDate||0));
+      const a=rows[0]; const e=a? eff(a.level,a.lastPerformed):0;
+      html+=`<td><span class='pill' style='background:${hue(e)}'></span>${e}</td>`;
+    }
+    html+='</tr>';
+  }
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
+
+/* Actions */
+async function exportJSON(){
+  const data={ techs: state.techs.map(({_id,...x})=>x), tasks: state.tasks.map(({_id,...x})=>x), assess: state.assess.map(({_id,...x})=>x) };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='workshop_export.json'; a.click(); URL.revokeObjectURL(url);
+}
+function importJSON(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=async()=>{
+    try{
+      const data=JSON.parse(String(r.result));
+      const b=db.batch();
+      if(Array.isArray(data.techs)){
+        for(const t of data.techs){
+          const q=await col.techs().where('id','==',t.id).limit(1).get();
+          const ref=q.empty? col.techs().doc() : q.docs[0].ref;
+          b.set(ref,{...t,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+        }
+      }
+      if(Array.isArray(data.tasks)){
+        for(const t of data.tasks){
+          const q=await col.tasks().where('id','==',t.id).limit(1).get();
+          const ref=q.empty? col.tasks().doc() : q.docs[0].ref;
+          b.set(ref,{...t,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+        }
+      }
+      await b.commit();
+      if(Array.isArray(data.assess)){
+        const chunks=(a,s)=>a.reduce((r,_,i)=>(i%s? r[r.length-1].push(a[i]) : r.push([a[i]]), r), []);
+        for(const ch of chunks(data.assess,400)){
+          const bb=db.batch();
+          for(const a of ch) bb.set(col.assess().doc(), {...a, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
+          await bb.commit();
+        }
+      }
+      alert('Import complete');
+    }catch(e){ alert('Import failed: '+e.message); }
+  }; r.readAsText(f);
+}
+async function seedCatalog(){
+  if(!confirm('Add starter catalog tasks?')) return;
+  const b=db.batch();
+  for(const t of seedTasks){
+    const q=await col.tasks().where('id','==',t.id).limit(1).get();
+    const ref=q.empty? col.tasks().doc() : q.docs[0].ref;
+    b.set(ref,{...t,createdAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+  }
+  await b.commit(); alert('Starter catalog added');
+}
+
+/* Listeners */
+function attach(){
+  if(unsub.techs) unsub.techs(); if(unsub.tasks) unsub.tasks(); if(unsub.assess) unsub.assess();
+  unsub.techs = col.techs().orderBy('name').onSnapshot(s=>{ state.techs = s.docs.map(d=>({_id:d.id, ...d.data()})); if(!document.getElementById('tab-techs').hidden) renderTechs(); });
+  unsub.tasks = col.tasks().orderBy('id').onSnapshot(s=>{ state.tasks = s.docs.map(d=>({_id:d.id, ...d.data()})); if(!document.getElementById('tab-tasks').hidden) renderTasks(); renderDash(); renderMatrix(); });
+  unsub.assess = col.assess().orderBy('assessmentDate','desc').onSnapshot(s=>{ state.assess = s.docs.map(d=>({_id:d.id, ...d.data()})); if(!document.getElementById('tab-assess').hidden) renderAssess(); renderDash(); renderMatrix(); });
+}
+
+auth.onAuthStateChanged(u=>{ state.user=u; if(u) attach(); render(); });
+render();
 </script>
-</body></html>
+</body>
+</html>

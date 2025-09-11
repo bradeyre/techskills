@@ -48,24 +48,23 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
-  <script>
-// below your firebase.initializeApp(...)
-document.addEventListener('click', async (e)=>{
-  if(e.target.id==='loginEmail'){
+/* Email/Password + Google handlers (NO extra <script> here) */
+document.addEventListener('click', async (e) => {
+  if (e.target.id === 'loginEmail') {
     const em = document.getElementById('email').value.trim();
     const pw = document.getElementById('password').value;
-    try { await auth.signInWithEmailAndPassword(em, pw); } 
-    catch(err){ alert('Sign-in failed: '+err.message); }
+    try { await auth.signInWithEmailAndPassword(em, pw); }
+    catch (err) { alert('Sign-in failed: ' + err.message); }
   }
-  if(e.target.id==='registerEmail'){
+  if (e.target.id === 'registerEmail') {
     const em = document.getElementById('email').value.trim();
     const pw = document.getElementById('password').value;
-    try { await auth.createUserWithEmailAndPassword(em, pw); } 
-    catch(err){ alert('Register failed: '+err.message); }
+    try { await auth.createUserWithEmailAndPassword(em, pw); }
+    catch (err) { alert('Register failed: ' + err.message); }
   }
-  if(e.target.id==='googleBtn'){
+  if (e.target.id === 'googleBtn') {
     try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
-    catch(err){ alert('Google sign-in failed: '+err.message); }
+    catch (err) { alert('Google sign-in failed: ' + err.message); }
   }
 });
 </script>

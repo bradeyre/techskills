@@ -89,7 +89,7 @@ const auth = {
   }
 };
 
-/* Enhanced Mock Firestore with real-time updates */
+/* Fixed Mock Firestore with proper data management */
 const db = {
   listeners: {},
   collection: (name) => ({
@@ -420,6 +420,7 @@ function render(){
     </select>
     <button class="btn" id="exportBtn">Export JSON</button>
     <button class="btn" id="seedBtn">Seed Tasks</button>
+    <button class="btn primary" id="seedEverythingBtn">Seed Everything</button>
     <button class="btn ghost" id="signOutBtn">Sign out</button>
     <input id="importFile" type="file" accept="application/json" hidden/>
     <button class="btn" id="importBtn">Import JSON</button>`;
@@ -428,6 +429,7 @@ function render(){
   head.querySelector('#importBtn').addEventListener('click', ()=>head.querySelector('#importFile').click());
   head.querySelector('#importFile').addEventListener('change', importJSON);
   head.querySelector('#seedBtn').addEventListener('click', seedCatalog);
+  head.querySelector('#seedEverythingBtn').addEventListener('click', seedEverything);
   head.querySelector('#teamFilter').addEventListener('change', (e)=>{ state.selectedTeam=e.target.value; render(); });
   app.appendChild(head);
 
@@ -704,7 +706,7 @@ function importJSON(ev){
 async function seedCatalog(){
   if(!confirm('Add starter catalog tasks?')) return;
   try {
-  for(const t of seedTasks){
+    for(const t of seedTasks){
       // Check if task already exists
       const existing = localStorage.getItem(`tasks_${t.id}`);
       if (!existing) {
@@ -714,6 +716,79 @@ async function seedCatalog(){
     alert('Starter catalog added successfully!');
   } catch (error) {
     alert('Error adding tasks: ' + error.message);
+  }
+}
+
+async function seedEverything(){
+  if(!confirm('Seed complete workshop system with teams, technicians, tasks, and sample assessments?')) return;
+  try {
+    // Seed teams
+    const prTeam = {id: 'PR', name: 'PR Team', type: 'PR', description: 'Premium Repair Team - Apple devices, MacBooks, iPads, iPhones', createdAt: new Date().toISOString()};
+    const trTeam = {id: 'TR', name: 'TR Team', type: 'TR', description: 'Technical Repair Team - Android, Samsung, Gaming consoles, Windows laptops', createdAt: new Date().toISOString()};
+    
+    await col.teams().add(prTeam);
+    await col.teams().add(trTeam);
+    
+    // Seed PR technicians
+    const prTechs = [
+      {id: 'PR001', name: 'PR Technician 1', team: 'PR', location: 'Workshop A', role: 'Senior Tech', notes: 'iPhone specialist'},
+      {id: 'PR002', name: 'PR Technician 2', team: 'PR', location: 'Workshop A', role: 'Tech', notes: 'iPad specialist'},
+      {id: 'PR003', name: 'PR Technician 3', team: 'PR', location: 'Workshop B', role: 'Senior Tech', notes: 'MacBook specialist'},
+      {id: 'PR004', name: 'PR Technician 4', team: 'PR', location: 'Workshop B', role: 'Tech', notes: 'Apple Watch specialist'},
+      {id: 'PR005', name: 'PR Technician 5', team: 'PR', location: 'Workshop A', role: 'Junior Tech', notes: 'Learning iPhone repairs'},
+      {id: 'PR006', name: 'PR Technician 6', team: 'PR', location: 'Workshop B', role: 'Junior Tech', notes: 'Learning MacBook repairs'}
+    ];
+    
+    // Seed TR technicians
+    const trTechs = [
+      {id: 'TR001', name: 'TR Technician 1', team: 'TR', location: 'Workshop C', role: 'Senior Tech', notes: 'Samsung specialist'},
+      {id: 'TR002', name: 'TR Technician 2', team: 'TR', location: 'Workshop C', role: 'Tech', notes: 'Android specialist'},
+      {id: 'TR003', name: 'TR Technician 3', team: 'TR', location: 'Workshop D', role: 'Senior Tech', notes: 'Gaming console specialist'},
+      {id: 'TR004', name: 'TR Technician 4', team: 'TR', location: 'Workshop D', role: 'Tech', notes: 'Windows laptop specialist'},
+      {id: 'TR005', name: 'TR Technician 5', team: 'TR', location: 'Workshop C', role: 'Junior Tech', notes: 'Learning Android repairs'},
+      {id: 'TR006', name: 'TR Technician 6', team: 'TR', location: 'Workshop D', role: 'Junior Tech', notes: 'Learning console repairs'}
+    ];
+    
+    for(const tech of [...prTechs, ...trTechs]) {
+      await col.techs().add({...tech, createdAt: new Date().toISOString()});
+    }
+    
+    // Seed tasks
+    for(const t of seedTasks){
+      const existing = localStorage.getItem(`tasks_${t.id}`);
+      if (!existing) {
+        await col.tasks().add({...t, createdAt: new Date().toISOString()});
+      }
+    }
+    
+    // Seed sample assessments
+    const sampleAssessments = [
+      // PR Team assessments
+      {techId: 'PR001', taskId: 'T010', level: 5, observed: 10, supervised: 5, unsupervisedPass90: 8, rework90: 0, avgTime: 22, lastPerformed: '2024-01-15', assessedBy: 'Admin', assessmentDate: '2024-01-15'},
+      {techId: 'PR001', taskId: 'T012', level: 5, observed: 12, supervised: 6, unsupervisedPass90: 10, rework90: 1, avgTime: 28, lastPerformed: '2024-01-10', assessedBy: 'Admin', assessmentDate: '2024-01-10'},
+      {techId: 'PR002', taskId: 'T031', level: 4, observed: 8, supervised: 4, unsupervisedPass90: 6, rework90: 0, avgTime: 38, lastPerformed: '2024-01-12', assessedBy: 'Admin', assessmentDate: '2024-01-12'},
+      {techId: 'PR003', taskId: 'T041', level: 5, observed: 15, supervised: 8, unsupervisedPass90: 12, rework90: 1, avgTime: 115, lastPerformed: '2024-01-08', assessedBy: 'Admin', assessmentDate: '2024-01-08'},
+      {techId: 'PR004', taskId: 'T070', level: 4, observed: 6, supervised: 3, unsupervisedPass90: 5, rework90: 0, avgTime: 42, lastPerformed: '2024-01-14', assessedBy: 'Admin', assessmentDate: '2024-01-14'},
+      
+      // TR Team assessments
+      {techId: 'TR001', taskId: 'T021', level: 5, observed: 10, supervised: 5, unsupervisedPass90: 8, rework90: 0, avgTime: 38, lastPerformed: '2024-01-13', assessedBy: 'Admin', assessmentDate: '2024-01-13'},
+      {techId: 'TR001', taskId: 'T023', level: 4, observed: 8, supervised: 4, unsupervisedPass90: 6, rework90: 1, avgTime: 28, lastPerformed: '2024-01-11', assessedBy: 'Admin', assessmentDate: '2024-01-11'},
+      {techId: 'TR002', taskId: 'T080', level: 4, observed: 7, supervised: 3, unsupervisedPass90: 5, rework90: 0, avgTime: 33, lastPerformed: '2024-01-09', assessedBy: 'Admin', assessmentDate: '2024-01-09'},
+      {techId: 'TR003', taskId: 'T060', level: 5, observed: 12, supervised: 6, unsupervisedPass90: 10, rework90: 1, avgTime: 72, lastPerformed: '2024-01-07', assessedBy: 'Admin', assessmentDate: '2024-01-07'},
+      {techId: 'TR004', taskId: 'T052', level: 4, observed: 9, supervised: 4, unsupervisedPass90: 7, rework90: 0, avgTime: 42, lastPerformed: '2024-01-06', assessedBy: 'Admin', assessmentDate: '2024-01-06'},
+      
+      // Some stale assessments for testing reminders
+      {techId: 'PR005', taskId: 'T010', level: 2, observed: 3, supervised: 2, unsupervisedPass90: 1, rework90: 0, avgTime: 35, lastPerformed: '2023-10-15', assessedBy: 'Admin', assessmentDate: '2023-10-15'},
+      {techId: 'TR005', taskId: 'T021', level: 2, observed: 2, supervised: 1, unsupervisedPass90: 1, rework90: 0, avgTime: 45, lastPerformed: '2023-11-20', assessedBy: 'Admin', assessmentDate: '2023-11-20'},
+    ];
+    
+    for(const assess of sampleAssessments) {
+      await col.assess().add({...assess, createdAt: new Date().toISOString()});
+    }
+    
+    alert('Complete workshop system seeded successfully!\n\n✅ 2 Teams (PR & TR)\n✅ 12 Technicians (6 per team)\n✅ 100+ Repair Tasks\n✅ Sample Assessments\n\nYou can now edit technician names and manage the system!');
+  } catch (error) {
+    alert('Error seeding system: ' + error.message);
   }
 }
 

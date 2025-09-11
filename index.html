@@ -52,20 +52,103 @@ footer{color:var(--sub);font-size:12px;margin-top:24px}
 <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
 
 <script>
-/* Firebase config (your values) */
-const firebaseConfig = {
-  apiKey: "AIzaSyAyw3eF56LjW3UYisuZJ6Y_NWb3yCYQZ8",
-  authDomain: "tech-skills-9a846.firebaseapp.com",
-  projectId: "tech-skills-9a846",
-  storageBucket: "tech-skills-9a846.appspot.com",
-  messagingSenderId: "1052706446287",
-  appId: "1:1052706446287:web:9c4ef2f3c0ad2095e6d0ba",
-  measurementId: "G-G1M9ELL1B8"
+/* Simple authentication system */
+const auth = {
+  currentUser: null,
+  signInWithEmailAndPassword: async (email, password) => {
+    if (email === 'admin' && password === 'a123456') {
+      auth.currentUser = { email: 'admin', displayName: 'Admin' };
+      return { user: auth.currentUser };
+    }
+    throw new Error('Invalid credentials');
+  },
+  createUserWithEmailAndPassword: async (email, password) => {
+    if (email === 'admin' && password === 'a123456') {
+      auth.currentUser = { email: 'admin', displayName: 'Admin' };
+      return { user: auth.currentUser };
+    }
+    throw new Error('Invalid credentials');
+  },
+  signOut: () => {
+    auth.currentUser = null;
+  },
+  onAuthStateChanged: (callback) => {
+    // Simulate auth state change
+    setTimeout(() => callback(auth.currentUser), 100);
+  }
 };
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db   = firebase.firestore();
+/* Mock Firestore for demo */
+const db = {
+  collection: (name) => ({
+    add: async (data) => {
+      const id = Math.random().toString(36).substr(2, 9);
+      const item = { _id: id, ...data };
+      localStorage.setItem(`${name}_${id}`, JSON.stringify(item));
+      return { id };
+    },
+    doc: (id) => ({
+      update: async (data) => {
+        const existing = localStorage.getItem(`${name}_${id}`);
+        if (existing) {
+          const item = { ...JSON.parse(existing), ...data };
+          localStorage.setItem(`${name}_${id}`, JSON.stringify(item));
+        }
+      },
+      delete: async () => {
+        localStorage.removeItem(`${name}_${id}`);
+      }
+    }),
+    orderBy: (field) => ({
+      onSnapshot: (callback) => {
+        const items = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith(`${name}_`)) {
+            const item = JSON.parse(localStorage.getItem(key));
+            items.push({ id: key.split('_')[1], data: () => item });
+          }
+        }
+        callback({ docs: items });
+      }
+    }),
+    where: (field, op, value) => ({
+      limit: (num) => ({
+        get: async () => {
+          const items = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith(`${name}_`)) {
+              const item = JSON.parse(localStorage.getItem(key));
+              if (item[field] === value) {
+                items.push({ id: key.split('_')[1], data: () => item });
+              }
+            }
+          }
+          return { docs: items, empty: items.length === 0 };
+        }
+      })
+    })
+  }),
+  batch: () => ({
+    set: (ref, data) => {
+      const id = Math.random().toString(36).substr(2, 9);
+      localStorage.setItem(`tasks_${id}`, JSON.stringify({ _id: id, ...data }));
+    },
+    commit: async () => {}
+  })
+};
+
+/* Mock Firebase */
+const firebase = {
+  auth: () => auth,
+  firestore: () => db,
+  firestore: {
+    FieldValue: {
+      serverTimestamp: () => new Date().toISOString()
+    }
+  }
+};
 
 /* Email/Password + Google handlers (NO extra <script> here) */
 document.addEventListener('click', async (e) => {
@@ -171,8 +254,6 @@ function render(){
         <div class="row">
           <button class="btn primary" id="loginEmail">Sign in</button>
           <button class="btn" id="registerEmail">Create account</button>
-          <div class="spacer"></div>
-          <button class="btn" id="googleBtn">Google</button>
         </div>
       </div>
     </div>`;
@@ -188,7 +269,6 @@ function render(){
       try { await auth.createUserWithEmailAndPassword(em, pw); }
       catch (err) { alert('Register failed: ' + err.message); }
     });
-    w.querySelector('#googleBtn').addEventListener('click', async ()=>{ try{ const p=new firebase.auth.GoogleAuthProvider(); await auth.signInWithPopup(p);}catch(e){ alert('Sign-in failed: '+e.message);} });
     app.appendChild(w); return;
   }
   const head=document.createElement('div'); head.className='row';

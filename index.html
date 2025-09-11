@@ -89,13 +89,16 @@ const auth = {
   }
 };
 
-/* Mock Firestore for demo */
+/* Enhanced Mock Firestore with real-time updates */
 const db = {
+  listeners: {},
   collection: (name) => ({
     add: async (data) => {
       const id = Math.random().toString(36).substr(2, 9);
       const item = { _id: id, ...data };
       localStorage.setItem(`${name}_${id}`, JSON.stringify(item));
+      // Trigger listeners
+      db.triggerListeners(name);
       return { id };
     },
     doc: (id) => ({
@@ -104,23 +107,32 @@ const db = {
         if (existing) {
           const item = { ...JSON.parse(existing), ...data };
           localStorage.setItem(`${name}_${id}`, JSON.stringify(item));
+          // Trigger listeners
+          db.triggerListeners(name);
         }
       },
       delete: async () => {
         localStorage.removeItem(`${name}_${id}`);
+        // Trigger listeners
+        db.triggerListeners(name);
       }
     }),
     orderBy: (field) => ({
       onSnapshot: (callback) => {
-        const items = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith(`${name}_`)) {
-            const item = JSON.parse(localStorage.getItem(key));
-            items.push({ id: key.split('_')[1], data: () => item });
-          }
-        }
+        const listenerId = Math.random().toString(36).substr(2, 9);
+        if (!db.listeners[name]) db.listeners[name] = [];
+        db.listeners[name].push({ id: listenerId, callback, field });
+        
+        // Initial call
+        const items = db.getCollectionItems(name, field);
         callback({ docs: items });
+        
+        // Return unsubscribe function
+        return () => {
+          if (db.listeners[name]) {
+            db.listeners[name] = db.listeners[name].filter(l => l.id !== listenerId);
+          }
+        };
       }
     }),
     where: (field, op, value) => ({
@@ -146,8 +158,38 @@ const db = {
       const id = Math.random().toString(36).substr(2, 9);
       localStorage.setItem(`tasks_${id}`, JSON.stringify({ _id: id, ...data }));
     },
-    commit: async () => {}
-  })
+    commit: async () => {
+      // Trigger listeners after batch commit
+      db.triggerListeners('tasks');
+    }
+  }),
+  getCollectionItems: (name, field) => {
+    const items = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(`${name}_`)) {
+        const item = JSON.parse(localStorage.getItem(key));
+        items.push({ id: key.split('_')[1], data: () => item });
+      }
+    }
+    // Sort by field if specified
+    if (field) {
+      items.sort((a, b) => {
+        const aVal = a.data()[field] || '';
+        const bVal = b.data()[field] || '';
+        return aVal.localeCompare(bVal);
+      });
+    }
+    return items;
+  },
+  triggerListeners: (name) => {
+    if (db.listeners[name]) {
+      db.listeners[name].forEach(listener => {
+        const items = db.getCollectionItems(name, listener.field);
+        listener.callback({ docs: items });
+      });
+    }
+  }
 };
 
 /* Mock Firebase */
@@ -403,7 +445,14 @@ function renderDash(){
 function renderTeams(){
   const el=document.getElementById('tab-teams');
   el.innerHTML = `<div class='row'><h2>Teams</h2><div class='spacer'></div><button class='btn primary' id='addTeam'>Add Team</button></div><div id='list' class='grid g2'></div>`;
-  el.querySelector('#addTeam').addEventListener('click', async()=>{ await col.teams().add({id:uid(),name:'New Team',type:'TR',description:'',createdAt:firebase.firestore.FieldValue.serverTimestamp()}) });
+  el.querySelector('#addTeam').addEventListener('click', async()=>{ 
+    try {
+      await col.teams().add({id:uid(),name:'New Team',type:'TR',description:'',createdAt:new Date().toISOString()});
+      alert('Team added successfully!');
+    } catch (error) {
+      alert('Error adding team: ' + error.message);
+    }
+  });
   const host=el.querySelector('#list'); host.innerHTML='';
   for(const t of state.teams){
     const div=document.createElement('div'); div.className='card';
@@ -414,7 +463,7 @@ function renderTeams(){
         <div><label>Description</label><input data-k='description' value='${escA(t.description||"")}'></div>
       </div>
       <div class='row' style='margin-top:8px'><div class='spacer'></div><button class='btn danger' data-del>Delete</button></div>`;
-    div.addEventListener('input', async e=>{ const k=e.target.dataset.k; if(!k) return; await col.teams().doc(t._id).update({[k]:e.target.value,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}); });
+    div.addEventListener('input', async e=>{ const k=e.target.dataset.k; if(!k) return; await col.teams().doc(t._id).update({[k]:e.target.value,updatedAt:new Date().toISOString()}); });
     div.querySelector('[data-del]').addEventListener('click', async()=>{ if(!confirm('Delete team?')) return; await col.teams().doc(t._id).delete(); });
     host.appendChild(div);
   }
@@ -423,7 +472,14 @@ function renderTeams(){
 function renderTechs(){
   const el=document.getElementById('tab-techs');
   el.innerHTML = `<div class='row'><h2>Technicians</h2><div class='spacer'></div><button class='btn primary' id='addTech'>Add Tech</button></div><div id='list' class='grid'></div>`;
-  el.querySelector('#addTech').addEventListener('click', async()=>{ await col.techs().add({id:uid(),name:'New Technician',team:'TR',location:'',role:'',notes:'',createdAt:firebase.firestore.FieldValue.serverTimestamp()}) });
+  el.querySelector('#addTech').addEventListener('click', async()=>{ 
+    try {
+      await col.techs().add({id:uid(),name:'New Technician',team:'TR',location:'',role:'',notes:'',createdAt:new Date().toISOString()});
+      alert('Technician added successfully!');
+    } catch (error) {
+      alert('Error adding technician: ' + error.message);
+    }
+  });
   const host=el.querySelector('#list'); host.innerHTML='';
   for(const t of state.techs){
     const div=document.createElement('div'); div.className='card';
@@ -436,7 +492,7 @@ function renderTechs(){
         <div><label>Notes</label><input data-k='notes' value='${escA(t.notes||"")}'></div>
       </div>
       <div class='row' style='margin-top:8px'><div class='spacer'></div><button class='btn danger' data-del>Delete</button></div>`;
-    div.addEventListener('input', async e=>{ const k=e.target.dataset.k; if(!k) return; await col.techs().doc(t._id).update({[k]:e.target.value,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}); });
+    div.addEventListener('input', async e=>{ const k=e.target.dataset.k; if(!k) return; await col.techs().doc(t._id).update({[k]:e.target.value,updatedAt:new Date().toISOString()}); });
     div.querySelector('[data-del]').addEventListener('click', async()=>{ if(!confirm('Delete tech and related assessments?')) return; await col.techs().doc(t._id).delete(); const snap=await col.assess().where('techId','==',t.id).get(); const b=db.batch(); snap.forEach(d=>b.delete(d.ref)); await b.commit();});
     host.appendChild(div);
   }
@@ -446,7 +502,14 @@ function renderTasks(){
   const el=document.getElementById('tab-tasks');
   el.innerHTML = `<div class='row'><h2>Task Catalog</h2><div class='spacer'></div><button class='btn' id='seed'>Seed tasks</button><button class='btn primary' id='addTask'>Add Task</button></div><div id='list' class='grid'></div>`;
   el.querySelector('#seed').addEventListener('click', seedCatalog);
-  el.querySelector('#addTask').addEventListener('click', async()=>{ await col.tasks().add({id:'T'+(Math.random()*100000|0),category:'Core',subcategory:'',name:'New Task',tier:'1 - Swap-level',risk:'Low',targetMins:0,qcChecks:0,tools:'',prerequisites:'',sopUrl:'',notes:'',createdAt:firebase.firestore.FieldValue.serverTimestamp()}) });
+  el.querySelector('#addTask').addEventListener('click', async()=>{ 
+    try {
+      await col.tasks().add({id:'T'+(Math.random()*100000|0),category:'Core',subcategory:'',name:'New Task',tier:'1 - Swap-level',risk:'Low',targetMins:0,qcChecks:0,tools:'',prerequisites:'',sopUrl:'',notes:'',createdAt:new Date().toISOString()});
+      alert('Task added successfully!');
+    } catch (error) {
+      alert('Error adding task: ' + error.message);
+    }
+  });
   const host=el.querySelector('#list'); host.innerHTML='';
   for(const t of state.tasks){
     const div=document.createElement('div'); div.className='card';
@@ -577,13 +640,18 @@ function importJSON(ev){
 }
 async function seedCatalog(){
   if(!confirm('Add starter catalog tasks?')) return;
-  const b=db.batch();
+  try {
   for(const t of seedTasks){
-    const q=await col.tasks().where('id','==',t.id).limit(1).get();
-    const ref=q.empty? col.tasks().doc() : q.docs[0].ref;
-    b.set(ref,{...t,createdAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+      // Check if task already exists
+      const existing = localStorage.getItem(`tasks_${t.id}`);
+      if (!existing) {
+        await col.tasks().add({...t, createdAt: new Date().toISOString()});
+      }
+    }
+    alert('Starter catalog added successfully!');
+  } catch (error) {
+    alert('Error adding tasks: ' + error.message);
   }
-  await b.commit(); alert('Starter catalog added');
 }
 
 /* Listeners */

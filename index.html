@@ -244,48 +244,111 @@ function authz(e){ return e>=3 }
 function hue(e){ const h=Math.max(0,Math.min(120,e*24)); return `hsl(${h} 70% 50% / 0.28)`; }
 function groupBy(arr,fn){ const m={}; for(const it of arr){ const k=fn(it); (m[k]||(m[k]=[])).push(it) } return m; }
 
-/* Comprehensive Multi-Brand Repair Tasks */
+/* Comprehensive Multi-Brand Repair Tasks Database */
 const seedTasks=[
-  // Core Safety & Process
+  // ===== CORE SAFETY & PROCESS =====
   {id:'T001',category:'Core',subcategory:'Safety/Process',name:'ESD compliance & safe workspace',tier:'1 - Swap-level',targetMins:3,qcChecks:3,tools:'ESD mat, strap',risk:'Low',description:'Set up ESD, verify ground, inspect tools.',sopUrl:'',team:'Both'},
+  {id:'T002',category:'Core',subcategory:'Safety/Process',name:'Tool calibration & maintenance',tier:'1 - Swap-level',targetMins:10,qcChecks:5,tools:'Calibration kit',risk:'Low',description:'Check torque drivers, multimeters, hot air stations.',sopUrl:'',team:'Both'},
+  {id:'T003',category:'Core',subcategory:'Safety/Process',name:'Workspace organization & cleanup',tier:'1 - Swap-level',targetMins:5,qcChecks:3,tools:'Cleaning supplies',risk:'Low',description:'Organize tools, clean workspace, dispose waste properly.',sopUrl:'',team:'Both'},
   
-  // iPhone Repairs
+  // ===== IPHONE REPAIRS =====
   {id:'T010',category:'iPhone',subcategory:'Battery',name:'iPhone Battery replacement (no error)',tier:'2 - Advanced',targetMins:25,qcChecks:8,tools:'Diagnostic battery, torque driver',risk:'Low',description:'Use diagnostic battery/programmer where lawful; calibrate.',sopUrl:'',team:'PR'},
-  {id:'T011',category:'iPhone',subcategory:'Display',name:'iPhone Display replacement + True Tone',tier:'2 - Advanced',targetMins:30,qcChecks:10,tools:'Programmer',risk:'Low',description:'Restore True Tone, dust control.',sopUrl:'',team:'PR'},
-  {id:'T012',category:'iPhone',subcategory:'Camera',name:'iPhone Camera replacement',tier:'2 - Advanced',targetMins:35,qcChecks:8,tools:'Torque driver, camera tester',risk:'Medium',description:'Replace camera module; test all functions.',sopUrl:'',team:'PR'},
-  {id:'T013',category:'iPhone',subcategory:'Logic Board',name:'iPhone Logic Board repair',tier:'3 - Board-level',targetMins:120,qcChecks:15,tools:'Microscope, hot air, multimeter',risk:'High',description:'Component-level repair; power management.',sopUrl:'',team:'PR'},
+  {id:'T011',category:'iPhone',subcategory:'Battery',name:'iPhone Battery replacement (with error)',tier:'2 - Advanced',targetMins:35,qcChecks:10,tools:'Programmer, diagnostic battery',risk:'Medium',description:'Clear battery error codes; calibrate new battery.',sopUrl:'',team:'PR'},
+  {id:'T012',category:'iPhone',subcategory:'Display',name:'iPhone Display replacement + True Tone',tier:'2 - Advanced',targetMins:30,qcChecks:10,tools:'Programmer',risk:'Low',description:'Restore True Tone, dust control.',sopUrl:'',team:'PR'},
+  {id:'T013',category:'iPhone',subcategory:'Display',name:'iPhone Back glass replacement',tier:'2 - Advanced',targetMins:45,qcChecks:8,tools:'Heat mat, cards, laser',risk:'Medium',description:'Remove back glass; replace with new unit.',sopUrl:'',team:'PR'},
+  {id:'T014',category:'iPhone',subcategory:'Camera',name:'iPhone Camera replacement',tier:'2 - Advanced',targetMins:35,qcChecks:8,tools:'Torque driver, camera tester',risk:'Medium',description:'Replace camera module; test all functions.',sopUrl:'',team:'PR'},
+  {id:'T015',category:'iPhone',subcategory:'Camera',name:'iPhone Camera lens replacement',tier:'2 - Advanced',targetMins:20,qcChecks:5,tools:'Heat mat, cards',risk:'Low',description:'Replace cracked camera lens.',sopUrl:'',team:'PR'},
+  {id:'T016',category:'iPhone',subcategory:'Charging',name:'iPhone Lightning port replacement',tier:'2 - Advanced',targetMins:30,qcChecks:6,tools:'Heat mat, cards',risk:'Medium',description:'Replace Lightning port assembly.',sopUrl:'',team:'PR'},
+  {id:'T017',category:'iPhone',subcategory:'Audio',name:'iPhone Speaker replacement',tier:'2 - Advanced',targetMins:25,qcChecks:5,tools:'Torque driver, cards',risk:'Low',description:'Replace speaker assembly; test audio.',sopUrl:'',team:'PR'},
+  {id:'T018',category:'iPhone',subcategory:'Audio',name:'iPhone Microphone replacement',tier:'2 - Advanced',targetMins:20,qcChecks:5,tools:'Torque driver, cards',risk:'Low',description:'Replace microphone assembly; test recording.',sopUrl:'',team:'PR'},
+  {id:'T019',category:'iPhone',subcategory:'Logic Board',name:'iPhone Logic Board repair',tier:'3 - Board-level',targetMins:120,qcChecks:15,tools:'Microscope, hot air, multimeter',risk:'High',description:'Component-level repair; power management.',sopUrl:'',team:'PR'},
+  {id:'T020',category:'iPhone',subcategory:'Logic Board',name:'iPhone Water damage repair',tier:'3 - Board-level',targetMins:90,qcChecks:12,tools:'Ultrasonic cleaner, microscope',risk:'High',description:'Clean corrosion; replace damaged components.',sopUrl:'',team:'PR'},
   
-  // Samsung Galaxy Repairs
-  {id:'T020',category:'Samsung Galaxy',subcategory:'Display',name:'Samsung AMOLED + FP calibration',tier:'2 - Advanced',targetMins:40,qcChecks:8,tools:'Service app/jig',risk:'Medium',description:'Replace AMOLED; run fingerprint calibration.',sopUrl:'',team:'TR'},
-  {id:'T021',category:'Samsung Galaxy',subcategory:'Battery',name:'Samsung Battery replacement',tier:'2 - Advanced',targetMins:30,qcChecks:6,tools:'Heat mat, cards',risk:'Medium',description:'Remove back glass; replace battery.',sopUrl:'',team:'TR'},
-  {id:'T022',category:'Samsung Galaxy',subcategory:'Charging',name:'Samsung Charging port replacement',tier:'2 - Advanced',targetMins:25,qcChecks:5,tools:'Heat mat, cards',risk:'Low',description:'Replace USB-C port assembly.',sopUrl:'',team:'TR'},
+  // ===== SAMSUNG GALAXY REPAIRS =====
+  {id:'T021',category:'Samsung Galaxy',subcategory:'Display',name:'Samsung AMOLED + FP calibration',tier:'2 - Advanced',targetMins:40,qcChecks:8,tools:'Service app/jig',risk:'Medium',description:'Replace AMOLED; run fingerprint calibration.',sopUrl:'',team:'TR'},
+  {id:'T022',category:'Samsung Galaxy',subcategory:'Display',name:'Samsung Back glass replacement',tier:'2 - Advanced',targetMins:35,qcChecks:6,tools:'Heat mat, cards',risk:'Medium',description:'Remove back glass; replace with new unit.',sopUrl:'',team:'TR'},
+  {id:'T023',category:'Samsung Galaxy',subcategory:'Battery',name:'Samsung Battery replacement',tier:'2 - Advanced',targetMins:30,qcChecks:6,tools:'Heat mat, cards',risk:'Medium',description:'Remove back glass; replace battery.',sopUrl:'',team:'TR'},
+  {id:'T024',category:'Samsung Galaxy',subcategory:'Charging',name:'Samsung Charging port replacement',tier:'2 - Advanced',targetMins:25,qcChecks:5,tools:'Heat mat, cards',risk:'Low',description:'Replace USB-C port assembly.',sopUrl:'',team:'TR'},
+  {id:'T025',category:'Samsung Galaxy',subcategory:'Camera',name:'Samsung Camera replacement',tier:'2 - Advanced',targetMins:30,qcChecks:6,tools:'Torque driver, cards',risk:'Medium',description:'Replace camera module; test all functions.',sopUrl:'',team:'TR'},
+  {id:'T026',category:'Samsung Galaxy',subcategory:'Audio',name:'Samsung Speaker replacement',tier:'2 - Advanced',targetMins:20,qcChecks:4,tools:'Torque driver, cards',risk:'Low',description:'Replace speaker assembly; test audio.',sopUrl:'',team:'TR'},
+  {id:'T027',category:'Samsung Galaxy',subcategory:'Logic Board',name:'Samsung Logic Board repair',tier:'3 - Board-level',targetMins:100,qcChecks:12,tools:'Microscope, hot air, multimeter',risk:'High',description:'Component-level repair; power management.',sopUrl:'',team:'TR'},
   
-  // iPad Repairs
+  // ===== IPAD REPAIRS =====
   {id:'T031',category:'iPad',subcategory:'Battery',name:'iPad Battery replacement',tier:'2 - Advanced',targetMins:40,qcChecks:8,tools:'Isopropyl, cards',risk:'Medium',description:'Remove screen safely; lift cells; reseal.',sopUrl:'',team:'PR'},
   {id:'T032',category:'iPad',subcategory:'Display',name:'iPad Display replacement',tier:'2 - Advanced',targetMins:45,qcChecks:10,tools:'Heat mat, suction cups',risk:'Medium',description:'Remove display; replace with new unit.',sopUrl:'',team:'PR'},
   {id:'T033',category:'iPad',subcategory:'Home Button',name:'iPad Home Button replacement',tier:'2 - Advanced',targetMins:30,qcChecks:6,tools:'Torque driver, adhesive',risk:'Low',description:'Replace home button; test Touch ID.',sopUrl:'',team:'PR'},
+  {id:'T034',category:'iPad',subcategory:'Charging',name:'iPad Lightning port replacement',tier:'2 - Advanced',targetMins:35,qcChecks:6,tools:'Heat mat, cards',risk:'Medium',description:'Replace Lightning port assembly.',sopUrl:'',team:'PR'},
+  {id:'T035',category:'iPad',subcategory:'Audio',name:'iPad Speaker replacement',tier:'2 - Advanced',targetMins:25,qcChecks:5,tools:'Torque driver, cards',risk:'Low',description:'Replace speaker assembly; test audio.',sopUrl:'',team:'PR'},
+  {id:'T036',category:'iPad',subcategory:'Logic Board',name:'iPad Logic Board repair',tier:'3 - Board-level',targetMins:120,qcChecks:15,tools:'Microscope, hot air, multimeter',risk:'High',description:'Component-level repair; power management.',sopUrl:'',team:'PR'},
   
-  // MacBook Repairs
+  // ===== MACBOOK REPAIRS =====
   {id:'T041',category:'MacBook',subcategory:'Keyboard',name:'MacBook Keyboard replacement',tier:'2 - Advanced',targetMins:120,qcChecks:10,tools:'Rivet kit, drivers',risk:'Medium',description:'Split top case; transfer rivets/screws; backlight check.',sopUrl:'',team:'PR'},
   {id:'T042',category:'MacBook',subcategory:'Display',name:'MacBook Display replacement',tier:'2 - Advanced',targetMins:90,qcChecks:8,tools:'Torque driver, adhesive',risk:'Medium',description:'Replace display assembly; test all functions.',sopUrl:'',team:'PR'},
   {id:'T043',category:'MacBook',subcategory:'Logic Board',name:'MacBook Logic Board repair',tier:'3 - Board-level',targetMins:180,qcChecks:20,tools:'Microscope, hot air, BGA rework',risk:'High',description:'Component-level repair; power management.',sopUrl:'',team:'PR'},
+  {id:'T044',category:'MacBook',subcategory:'Power',name:'MacBook MagSafe port replacement',tier:'2 - Advanced',targetMins:60,qcChecks:8,tools:'Torque driver, cards',risk:'Medium',description:'Replace MagSafe port assembly.',sopUrl:'',team:'PR'},
+  {id:'T045',category:'MacBook',subcategory:'Storage',name:'MacBook SSD replacement',tier:'2 - Advanced',targetMins:45,qcChecks:6,tools:'Torque driver, cards',risk:'Low',description:'Replace SSD; restore from backup.',sopUrl:'',team:'PR'},
+  {id:'T046',category:'MacBook',subcategory:'Audio',name:'MacBook Speaker replacement',tier:'2 - Advanced',targetMins:40,qcChecks:6,tools:'Torque driver, cards',risk:'Low',description:'Replace speaker assembly; test audio.',sopUrl:'',team:'PR'},
   
-  // Gaming Console Repairs
+  // ===== GAMING CONSOLE REPAIRS =====
   {id:'T060',category:'PlayStation',subcategory:'HDMI',name:'PlayStation HDMI port replacement',tier:'3 - Board-level',targetMins:75,qcChecks:10,tools:'Hot air, microscope',risk:'High',description:'Hot air + iron; pad repair; retimer check.',sopUrl:'',team:'TR'},
-  {id:'T061',category:'Xbox',subcategory:'HDMI',name:'Xbox HDMI port replacement',tier:'3 - Board-level',targetMins:75,qcChecks:10,tools:'Hot air, microscope',risk:'High',description:'Hot air + iron; pad repair; retimer check.',sopUrl:'',team:'TR'},
-  {id:'T062',category:'Nintendo Switch',subcategory:'Joy-Con',name:'Nintendo Switch Joy-Con repair',tier:'2 - Advanced',targetMins:45,qcChecks:8,tools:'Torque driver, ribbon cables',risk:'Medium',description:'Fix drift, replace buttons, test all functions.',sopUrl:'',team:'TR'},
+  {id:'T061',category:'PlayStation',subcategory:'Power',name:'PlayStation Power supply replacement',tier:'2 - Advanced',targetMins:30,qcChecks:6,tools:'Torque driver, cards',risk:'Medium',description:'Replace power supply unit.',sopUrl:'',team:'TR'},
+  {id:'T062',category:'PlayStation',subcategory:'Storage',name:'PlayStation HDD/SSD replacement',tier:'2 - Advanced',targetMins:25,qcChecks:4,tools:'Torque driver, cards',risk:'Low',description:'Replace storage drive; reinstall OS.',sopUrl:'',team:'TR'},
+  {id:'T063',category:'Xbox',subcategory:'HDMI',name:'Xbox HDMI port replacement',tier:'3 - Board-level',targetMins:75,qcChecks:10,tools:'Hot air, microscope',risk:'High',description:'Hot air + iron; pad repair; retimer check.',sopUrl:'',team:'TR'},
+  {id:'T064',category:'Xbox',subcategory:'Power',name:'Xbox Power supply replacement',tier:'2 - Advanced',targetMins:30,qcChecks:6,tools:'Torque driver, cards',risk:'Medium',description:'Replace power supply unit.',sopUrl:'',team:'TR'},
+  {id:'T065',category:'Xbox',subcategory:'Storage',name:'Xbox HDD/SSD replacement',tier:'2 - Advanced',targetMins:25,qcChecks:4,tools:'Torque driver, cards',risk:'Low',description:'Replace storage drive; reinstall OS.',sopUrl:'',team:'TR'},
+  {id:'T066',category:'Nintendo Switch',subcategory:'Joy-Con',name:'Nintendo Switch Joy-Con repair',tier:'2 - Advanced',targetMins:45,qcChecks:8,tools:'Torque driver, ribbon cables',risk:'Medium',description:'Fix drift, replace buttons, test all functions.',sopUrl:'',team:'TR'},
+  {id:'T067',category:'Nintendo Switch',subcategory:'Display',name:'Nintendo Switch Screen replacement',tier:'2 - Advanced',targetMins:40,qcChecks:6,tools:'Heat mat, cards',risk:'Medium',description:'Replace screen; test touch functionality.',sopUrl:'',team:'TR'},
+  {id:'T068',category:'Nintendo Switch',subcategory:'Charging',name:'Nintendo Switch USB-C port replacement',tier:'2 - Advanced',targetMins:35,qcChecks:6,tools:'Heat mat, cards',risk:'Medium',description:'Replace USB-C port assembly.',sopUrl:'',team:'TR'},
   
-  // Apple Watch Repairs
+  // ===== APPLE WATCH REPAIRS =====
   {id:'T070',category:'Apple Watch',subcategory:'Display',name:'Apple Watch Screen replacement',tier:'2 - Advanced',targetMins:45,qcChecks:8,tools:'Heat mat, clamps',risk:'Medium',description:'Heat separation; seal replacement; water test.',sopUrl:'',team:'PR'},
   {id:'T071',category:'Apple Watch',subcategory:'Battery',name:'Apple Watch Battery replacement',tier:'2 - Advanced',targetMins:35,qcChecks:6,tools:'Heat mat, cards',risk:'Medium',description:'Remove screen; replace battery; reseal.',sopUrl:'',team:'PR'},
+  {id:'T072',category:'Apple Watch',subcategory:'Crown',name:'Apple Watch Digital Crown replacement',tier:'2 - Advanced',targetMins:30,qcChecks:6,tools:'Torque driver, cards',risk:'Medium',description:'Replace Digital Crown; test rotation and press.',sopUrl:'',team:'PR'},
+  {id:'T073',category:'Apple Watch',subcategory:'Band',name:'Apple Watch Band replacement',tier:'1 - Swap-level',targetMins:5,qcChecks:2,tools:'Band tool',risk:'Low',description:'Replace watch band; test secure attachment.',sopUrl:'',team:'PR'},
   
-  // Laptop Repairs
+  // ===== WINDOWS LAPTOP REPAIRS =====
   {id:'T052',category:'Windows Laptop',subcategory:'Power',name:'Laptop DC jack replacement',tier:'2 - Advanced',targetMins:45,qcChecks:6,tools:'Iron, wick, flux',risk:'Medium',description:'Desolder/solder jack; strain relief.',sopUrl:'',team:'TR'},
   {id:'T053',category:'Windows Laptop',subcategory:'Keyboard',name:'Laptop Keyboard replacement',tier:'2 - Advanced',targetMins:60,qcChecks:8,tools:'Torque driver, ribbon cables',risk:'Low',description:'Remove keyboard; replace with new unit.',sopUrl:'',team:'TR'},
   {id:'T054',category:'Windows Laptop',subcategory:'Display',name:'Laptop Display replacement',tier:'2 - Advanced',targetMins:50,qcChecks:6,tools:'Torque driver, adhesive',risk:'Low',description:'Replace display panel; test all functions.',sopUrl:'',team:'TR'},
+  {id:'T055',category:'Windows Laptop',subcategory:'Storage',name:'Laptop HDD/SSD replacement',tier:'2 - Advanced',targetMins:30,qcChecks:4,tools:'Torque driver, cards',risk:'Low',description:'Replace storage drive; reinstall OS.',sopUrl:'',team:'TR'},
+  {id:'T056',category:'Windows Laptop',subcategory:'Memory',name:'Laptop RAM replacement',tier:'1 - Swap-level',targetMins:15,qcChecks:3,tools:'Torque driver, cards',risk:'Low',description:'Replace RAM modules; test memory.',sopUrl:'',team:'TR'},
+  {id:'T057',category:'Windows Laptop',subcategory:'Audio',name:'Laptop Speaker replacement',tier:'2 - Advanced',targetMins:35,qcChecks:5,tools:'Torque driver, cards',risk:'Low',description:'Replace speaker assembly; test audio.',sopUrl:'',team:'TR'},
+  {id:'T058',category:'Windows Laptop',subcategory:'Logic Board',name:'Laptop Logic Board repair',tier:'3 - Board-level',targetMins:120,qcChecks:15,tools:'Microscope, hot air, multimeter',risk:'High',description:'Component-level repair; power management.',sopUrl:'',team:'TR'},
   
-  // Safety & Advanced
-  {id:'T090',category:'Safety',subcategory:'Electrical',name:'Mains isolation & capacitor discharge',tier:'2 - Advanced',targetMins:15,qcChecks:5,tools:'Insulated tools, HV resistor',risk:'High',description:'LOTO; verify isolation; discharge HV caps.',sopUrl:'',team:'Both'},
+  // ===== ANDROID PHONE REPAIRS =====
+  {id:'T080',category:'Android Phone',subcategory:'Display',name:'Android Display replacement',tier:'2 - Advanced',targetMins:35,qcChecks:6,tools:'Heat mat, cards',risk:'Medium',description:'Replace display assembly; test touch.',sopUrl:'',team:'TR'},
+  {id:'T081',category:'Android Phone',subcategory:'Battery',name:'Android Battery replacement',tier:'2 - Advanced',targetMins:25,qcChecks:5,tools:'Heat mat, cards',risk:'Medium',description:'Remove back cover; replace battery.',sopUrl:'',team:'TR'},
+  {id:'T082',category:'Android Phone',subcategory:'Charging',name:'Android USB-C port replacement',tier:'2 - Advanced',targetMins:20,qcChecks:4,tools:'Heat mat, cards',risk:'Low',description:'Replace USB-C port assembly.',sopUrl:'',team:'TR'},
+  {id:'T083',category:'Android Phone',subcategory:'Camera',name:'Android Camera replacement',tier:'2 - Advanced',targetMins:25,qcChecks:5,tools:'Torque driver, cards',risk:'Medium',description:'Replace camera module; test all functions.',sopUrl:'',team:'TR'},
+  {id:'T084',category:'Android Phone',subcategory:'Audio',name:'Android Speaker replacement',tier:'2 - Advanced',targetMins:20,qcChecks:4,tools:'Torque driver, cards',risk:'Low',description:'Replace speaker assembly; test audio.',sopUrl:'',team:'TR'},
+  
+  // ===== TABLET REPAIRS =====
+  {id:'T090',category:'Tablet',subcategory:'Display',name:'Android Tablet Display replacement',tier:'2 - Advanced',targetMins:40,qcChecks:6,tools:'Heat mat, cards',risk:'Medium',description:'Replace display assembly; test touch.',sopUrl:'',team:'TR'},
+  {id:'T091',category:'Tablet',subcategory:'Battery',name:'Android Tablet Battery replacement',tier:'2 - Advanced',targetMins:35,qcChecks:6,tools:'Heat mat, cards',risk:'Medium',description:'Remove back cover; replace battery.',sopUrl:'',team:'TR'},
+  {id:'T092',category:'Tablet',subcategory:'Charging',name:'Android Tablet USB-C port replacement',tier:'2 - Advanced',targetMins:25,qcChecks:4,tools:'Heat mat, cards',risk:'Low',description:'Replace USB-C port assembly.',sopUrl:'',team:'TR'},
+  
+  // ===== SMARTWATCH REPAIRS =====
+  {id:'T100',category:'Smartwatch',subcategory:'Display',name:'Android Smartwatch Screen replacement',tier:'2 - Advanced',targetMins:40,qcChecks:6,tools:'Heat mat, cards',risk:'Medium',description:'Replace screen; test touch functionality.',sopUrl:'',team:'TR'},
+  {id:'T101',category:'Smartwatch',subcategory:'Battery',name:'Android Smartwatch Battery replacement',tier:'2 - Advanced',targetMins:30,qcChecks:5,tools:'Heat mat, cards',risk:'Medium',description:'Remove back cover; replace battery.',sopUrl:'',team:'TR'},
+  {id:'T102',category:'Smartwatch',subcategory:'Band',name:'Smartwatch Band replacement',tier:'1 - Swap-level',targetMins:5,qcChecks:2,tools:'Band tool',risk:'Low',description:'Replace watch band; test secure attachment.',sopUrl:'',team:'TR'},
+  
+  // ===== SAFETY & ADVANCED =====
+  {id:'T110',category:'Safety',subcategory:'Electrical',name:'Mains isolation & capacitor discharge',tier:'2 - Advanced',targetMins:15,qcChecks:5,tools:'Insulated tools, HV resistor',risk:'High',description:'LOTO; verify isolation; discharge HV caps.',sopUrl:'',team:'Both'},
+  {id:'T111',category:'Safety',subcategory:'Chemical',name:'Battery disposal & recycling',tier:'1 - Swap-level',targetMins:10,qcChecks:3,tools:'Safety container, gloves',risk:'Medium',description:'Properly dispose of damaged batteries.',sopUrl:'',team:'Both'},
+  {id:'T112',category:'Safety',subcategory:'Environmental',name:'Workspace ventilation & air quality',tier:'1 - Swap-level',targetMins:5,qcChecks:2,tools:'Air quality monitor',risk:'Low',description:'Check ventilation; monitor air quality.',sopUrl:'',team:'Both'},
+  
+  // ===== DIAGNOSTIC & TESTING =====
+  {id:'T120',category:'Diagnostic',subcategory:'Software',name:'Device diagnostics & testing',tier:'1 - Swap-level',targetMins:15,qcChecks:5,tools:'Diagnostic software, cables',risk:'Low',description:'Run comprehensive device diagnostics.',sopUrl:'',team:'Both'},
+  {id:'T121',category:'Diagnostic',subcategory:'Hardware',name:'Component testing & verification',tier:'2 - Advanced',targetMins:20,qcChecks:6,tools:'Multimeter, oscilloscope',risk:'Low',description:'Test individual components; verify functionality.',sopUrl:'',team:'Both'},
+  {id:'T122',category:'Diagnostic',subcategory:'Performance',name:'Performance benchmarking',tier:'2 - Advanced',targetMins:25,qcChecks:8,tools:'Benchmark software, thermal camera',risk:'Low',description:'Run performance tests; check thermal behavior.',sopUrl:'',team:'Both'},
+  
+  // ===== DATA RECOVERY =====
+  {id:'T130',category:'Data Recovery',subcategory:'Software',name:'Data backup & recovery',tier:'2 - Advanced',targetMins:60,qcChecks:10,tools:'Data recovery software, cables',risk:'Medium',description:'Backup data; recover from damaged devices.',sopUrl:'',team:'Both'},
+  {id:'T131',category:'Data Recovery',subcategory:'Hardware',name:'Storage device repair',tier:'3 - Board-level',targetMins:90,qcChecks:12,tools:'Microscope, hot air, data recovery tools',risk:'High',description:'Repair damaged storage devices; recover data.',sopUrl:'',team:'Both'},
+  
+  // ===== CUSTOM & SPECIALIZED =====
+  {id:'T140',category:'Custom',subcategory:'Modification',name:'Device modification & customization',tier:'3 - Board-level',targetMins:120,qcChecks:15,tools:'Custom tools, specialized equipment',risk:'High',description:'Custom modifications; specialized repairs.',sopUrl:'',team:'Both'},
+  {id:'T141',category:'Custom',subcategory:'Prototype',name:'Prototype development & testing',tier:'3 - Board-level',targetMins:180,qcChecks:20,tools:'Prototyping tools, test equipment',risk:'High',description:'Develop and test new repair techniques.',sopUrl:'',team:'Both'},
 ];
 
 /* State */

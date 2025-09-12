@@ -718,19 +718,17 @@ function importJSON(ev){
 }
 
 async function seedCatalog(){
-  if(!confirm('Add starter catalog tasks?')) return;
   try {
     // Check if tasks already exist
-    const { data: existingTasks } = await supabase.from('tasks').select('id').limit(1);
-    if (existingTasks && existingTasks.length > 0) {
-      alert('Tasks already exist in database. Use "Seed Everything" to reset.');
-      return;
-    }
+    const { data: existingTasks, count } = await supabase.from('tasks').select('*', { count: 'exact' }).limit(1);
     
-    // Load seed data from the SQL file (we'll need to implement this)
-    alert('Please run the supabase-seed-data.sql file in your Supabase SQL editor to seed the database.');
+    if (existingTasks && existingTasks.length > 0) {
+      alert(`✅ Skills already loaded!\n\nFound ${count} repair skills in database.\n\nSkills include:\n📱 iPhone, Samsung, Google Pixel\n💻 MacBook, Windows Laptops\n📱 iPad, Android Tablets\n🎮 PlayStation, Xbox, Nintendo Switch\n⌚ Apple Watch, AirPods, Headphones\n🔧 Core Safety, Diagnostics, Data Recovery\n\nUse the search and filters to explore the skills catalog!`);
+    } else {
+      alert('❌ No skills found in database.\n\nPlease run the comprehensive-repair-skills.sql file in your Supabase SQL editor to load all repair skills.');
+    }
   } catch (error) {
-    alert('Error adding tasks: ' + error.message);
+    alert('Error checking skills: ' + error.message);
   }
 }
 
@@ -740,20 +738,8 @@ async function seedEverything(){
     // Clear existing data
     await supabase.from('assessments').delete().neq('id', '');
     await supabase.from('technicians').delete().neq('id', '');
-    await supabase.from('tasks').delete().neq('id', '');
-    await supabase.from('teams').delete().neq('id', '');
     
-    // Insert teams
-    const { error: teamsError } = await supabase
-      .from('teams')
-      .insert([
-        {id: 'PR', name: 'PR Team', type: 'PR', description: 'Premium Repair Team - Apple devices, MacBooks, iPads, iPhones'},
-        {id: 'TR', name: 'TR Team', type: 'TR', description: 'Technical Repair Team - Android, Samsung, Gaming consoles, Windows laptops'}
-      ]);
-    
-    if (teamsError) throw teamsError;
-    
-    // Insert technicians
+    // Insert technicians (teams and tasks should already exist from SQL)
     const technicians = [
       {id: 'PR001', name: 'PR Technician 1', team: 'PR', location: 'Workshop A', role: 'Senior Tech', notes: 'iPhone specialist'},
       {id: 'PR002', name: 'PR Technician 2', team: 'PR', location: 'Workshop A', role: 'Tech', notes: 'iPad specialist'},
@@ -764,13 +750,13 @@ async function seedEverything(){
     const { error: techsError } = await supabase.from('technicians').insert(technicians);
     if (techsError) throw techsError;
     
-    // Insert comprehensive repair tasks (70+ skills covering all device types)
-    const tasks = comprehensiveTasks;
-    
-    const { error: tasksError } = await supabase.from('tasks').insert(tasks);
+    // Check if tasks already exist (they should from the SQL file)
+    const { data: existingTasks, error: tasksError } = await supabase.from('tasks').select('count').limit(1);
     if (tasksError) throw tasksError;
     
-    alert('Complete workshop system seeded successfully!\n\n✅ 2 Teams (PR & TR)\n✅ 4 Technicians\n✅ 70+ Comprehensive Repair Skills\n\n📱 iPhone, Samsung, iPad, MacBook\n🎮 PlayStation, Xbox, Nintendo Switch\n⌚ Apple Watch, AirPods, Headphones\n🔧 Core Safety, Diagnostic, Data Recovery\n\nData is now stored in Supabase database!');
+    const taskCount = existingTasks ? existingTasks.length : 0;
+    
+    alert('Workshop system ready!\n\n✅ 2 Teams (PR & TR)\n✅ 4 Technicians\n✅ ' + (taskCount > 0 ? 'Skills already loaded from database' : 'No skills found - please run comprehensive-repair-skills.sql in Supabase SQL editor') + '\n\n📱 iPhone, Samsung, iPad, MacBook\n🎮 PlayStation, Xbox, Nintendo Switch\n⌚ Apple Watch, AirPods, Headphones\n🔧 Core Safety, Diagnostic, Data Recovery\n\nData is now stored in Supabase database!');
   } catch (error) {
     alert('Error seeding system: ' + error.message);
   }

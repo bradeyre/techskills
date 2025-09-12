@@ -718,33 +718,22 @@ function importJSON(ev){
 }
 
 async function seedCatalog(){
+  // Just refresh the data - it should already be in the database
   try {
-    // Check if tasks already exist
-    const { data: existingTasks, count, error } = await supabase.from('tasks').select('*', { count: 'exact' }).limit(10);
+    const { data: tasks, error } = await supabase.from('tasks').select('*');
+    if (error) throw error;
     
-    console.log('Direct Supabase query result:', { data: existingTasks, count, error });
+    state.tasks = tasks || [];
+    console.log('Loaded tasks from database:', state.tasks.length);
     
-    if (error) {
-      alert('❌ Database error: ' + error.message);
-      return;
+    // Re-render if we're on the tasks tab
+    if (!document.getElementById('tab-tasks').hidden) {
+      renderTasks();
     }
     
-    if (existingTasks && existingTasks.length > 0) {
-      // Force refresh the tasks in state
-      state.tasks = existingTasks;
-      console.log('Updated state.tasks with direct query:', state.tasks.length);
-      
-      // Re-render the tasks view
-      if (!document.getElementById('tab-tasks').hidden) {
-        renderTasks();
-      }
-      
-      alert(`✅ Skills loaded!\n\nFound ${count} repair skills in database.\n\nSkills include:\n📱 iPhone, Samsung, Google Pixel\n💻 MacBook, Windows Laptops\n📱 iPad, Android Tablets\n🎮 PlayStation, Xbox, Nintendo Switch\n⌚ Apple Watch, AirPods, Headphones\n🔧 Core Safety, Diagnostics, Data Recovery\n\nUse the search and filters to explore the skills catalog!`);
-    } else {
-      alert('❌ No skills found in database.\n\nPlease run the comprehensive-repair-skills.sql file in your Supabase SQL editor to load all repair skills.');
-    }
+    alert(`✅ Refreshed skills data!\n\nFound ${state.tasks.length} repair skills in database.`);
   } catch (error) {
-    alert('Error checking skills: ' + error.message);
+    alert('Error loading skills: ' + error.message);
   }
 }
 
@@ -779,19 +768,39 @@ async function seedEverything(){
 }
 
 /* Listeners */
-function attach(){
+async function attach(){
   if(unsub.techs) unsub.techs(); if(unsub.tasks) unsub.tasks(); if(unsub.assess) unsub.assess(); if(unsub.teams) unsub.teams();
-  unsub.techs = col.techs().orderBy('name').onSnapshot(s=>{ state.techs = s.docs.map(d=>({...d.data()})); if(!document.getElementById('tab-techs').hidden) renderTechs(); renderDash(); renderMatrix(); });
-  unsub.tasks = col.tasks().orderBy('id').onSnapshot(s=>{ 
-    console.log('Tasks loaded:', s.docs.length, 'items');
-    state.tasks = s.docs.map(d=>({...d.data()})); 
-    console.log('State tasks:', state.tasks.length);
-    if(!document.getElementById('tab-tasks').hidden) renderTasks(); 
-    renderDash(); 
-    renderMatrix(); 
-  });
-  unsub.assess = col.assess().orderBy('assessment_date','desc').onSnapshot(s=>{ state.assess = s.docs.map(d=>({...d.data()})); if(!document.getElementById('tab-assess').hidden) renderAssess(); renderDash(); renderMatrix(); });
-  unsub.teams = col.teams().orderBy('name').onSnapshot(s=>{ state.teams = s.docs.map(d=>({...d.data()})); if(!document.getElementById('tab-teams').hidden) renderTeams(); });
+  
+  // Load data directly from Supabase
+  try {
+    // Load technicians
+    const { data: techs } = await supabase.from('technicians').select('*');
+    state.techs = techs || [];
+    if(!document.getElementById('tab-techs').hidden) renderTechs();
+    
+    // Load tasks
+    const { data: tasks } = await supabase.from('tasks').select('*');
+    state.tasks = tasks || [];
+    console.log('Loaded tasks directly:', state.tasks.length);
+    if(!document.getElementById('tab-tasks').hidden) renderTasks();
+    
+    // Load assessments
+    const { data: assess } = await supabase.from('assessments').select('*');
+    state.assess = assess || [];
+    if(!document.getElementById('tab-assess').hidden) renderAssess();
+    
+    // Load teams
+    const { data: teams } = await supabase.from('teams').select('*');
+    state.teams = teams || [];
+    if(!document.getElementById('tab-teams').hidden) renderTeams();
+    
+    // Re-render dashboard and matrix
+    renderDash();
+    renderMatrix();
+    
+  } catch (error) {
+    console.error('Error loading data:', error);
+  }
 }
 
 auth.onAuthStateChanged(u=>{ state.user=u; if(u) attach(); render(); });

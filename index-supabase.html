@@ -49,6 +49,9 @@ footer{color:var(--sub);font-size:12px;margin-top:24px}
 <!-- Supabase -->
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
+<!-- Comprehensive Repair Skills Data -->
+<script src="comprehensive-tasks.js"></script>
+
 <script>
 /* Supabase Configuration */
 const SUPABASE_URL = 'https://liqxgoscglpeywuermjq.supabase.co';  // Your Supabase project URL
@@ -761,12 +764,8 @@ async function seedEverything(){
     const { error: techsError } = await supabase.from('technicians').insert(technicians);
     if (techsError) throw techsError;
     
-    // Insert sample tasks
-    const tasks = [
-      {id: 'T001', category: 'Core', subcategory: 'Safety/Process', name: 'ESD compliance & safe workspace', tier: '1 - Swap-level', target_mins: 3, qc_checks: 3, tools: 'ESD mat, strap', risk: 'Low', description: 'Set up ESD, verify ground, inspect tools.', team: 'Both'},
-      {id: 'T010', category: 'iPhone', subcategory: 'Battery', name: 'iPhone Battery replacement (no error)', tier: '2 - Advanced', target_mins: 25, qc_checks: 8, tools: 'Diagnostic battery, torque driver', risk: 'Low', description: 'Use diagnostic battery/programmer where lawful; calibrate.', team: 'PR'},
-      {id: 'T021', category: 'Samsung Galaxy', subcategory: 'Display', name: 'Samsung AMOLED + FP calibration', tier: '2 - Advanced', target_mins: 40, qc_checks: 8, tools: 'Service app/jig', risk: 'Medium', description: 'Replace AMOLED; run fingerprint calibration.', team: 'TR'}
-    ];
+    // Insert comprehensive repair tasks (70+ skills covering all device types)
+    const tasks = comprehensiveTasks;
     
     const { error: tasksError } = await supabase.from('tasks').insert(tasks);
     if (tasksError) throw tasksError;

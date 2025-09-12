@@ -720,10 +720,26 @@ function importJSON(ev){
 async function seedCatalog(){
   try {
     // Check if tasks already exist
-    const { data: existingTasks, count } = await supabase.from('tasks').select('*', { count: 'exact' }).limit(1);
+    const { data: existingTasks, count, error } = await supabase.from('tasks').select('*', { count: 'exact' }).limit(10);
+    
+    console.log('Direct Supabase query result:', { data: existingTasks, count, error });
+    
+    if (error) {
+      alert('❌ Database error: ' + error.message);
+      return;
+    }
     
     if (existingTasks && existingTasks.length > 0) {
-      alert(`✅ Skills already loaded!\n\nFound ${count} repair skills in database.\n\nSkills include:\n📱 iPhone, Samsung, Google Pixel\n💻 MacBook, Windows Laptops\n📱 iPad, Android Tablets\n🎮 PlayStation, Xbox, Nintendo Switch\n⌚ Apple Watch, AirPods, Headphones\n🔧 Core Safety, Diagnostics, Data Recovery\n\nUse the search and filters to explore the skills catalog!`);
+      // Force refresh the tasks in state
+      state.tasks = existingTasks;
+      console.log('Updated state.tasks with direct query:', state.tasks.length);
+      
+      // Re-render the tasks view
+      if (!document.getElementById('tab-tasks').hidden) {
+        renderTasks();
+      }
+      
+      alert(`✅ Skills loaded!\n\nFound ${count} repair skills in database.\n\nSkills include:\n📱 iPhone, Samsung, Google Pixel\n💻 MacBook, Windows Laptops\n📱 iPad, Android Tablets\n🎮 PlayStation, Xbox, Nintendo Switch\n⌚ Apple Watch, AirPods, Headphones\n🔧 Core Safety, Diagnostics, Data Recovery\n\nUse the search and filters to explore the skills catalog!`);
     } else {
       alert('❌ No skills found in database.\n\nPlease run the comprehensive-repair-skills.sql file in your Supabase SQL editor to load all repair skills.');
     }
@@ -766,7 +782,14 @@ async function seedEverything(){
 function attach(){
   if(unsub.techs) unsub.techs(); if(unsub.tasks) unsub.tasks(); if(unsub.assess) unsub.assess(); if(unsub.teams) unsub.teams();
   unsub.techs = col.techs().orderBy('name').onSnapshot(s=>{ state.techs = s.docs.map(d=>({...d.data()})); if(!document.getElementById('tab-techs').hidden) renderTechs(); renderDash(); renderMatrix(); });
-  unsub.tasks = col.tasks().orderBy('id').onSnapshot(s=>{ state.tasks = s.docs.map(d=>({...d.data()})); if(!document.getElementById('tab-tasks').hidden) renderTasks(); renderDash(); renderMatrix(); });
+  unsub.tasks = col.tasks().orderBy('id').onSnapshot(s=>{ 
+    console.log('Tasks loaded:', s.docs.length, 'items');
+    state.tasks = s.docs.map(d=>({...d.data()})); 
+    console.log('State tasks:', state.tasks.length);
+    if(!document.getElementById('tab-tasks').hidden) renderTasks(); 
+    renderDash(); 
+    renderMatrix(); 
+  });
   unsub.assess = col.assess().orderBy('assessment_date','desc').onSnapshot(s=>{ state.assess = s.docs.map(d=>({...d.data()})); if(!document.getElementById('tab-assess').hidden) renderAssess(); renderDash(); renderMatrix(); });
   unsub.teams = col.teams().orderBy('name').onSnapshot(s=>{ state.teams = s.docs.map(d=>({...d.data()})); if(!document.getElementById('tab-teams').hidden) renderTeams(); });
 }

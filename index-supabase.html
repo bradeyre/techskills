@@ -771,7 +771,7 @@ async function seedEverything(){
     const { error: tasksError } = await supabase.from('tasks').insert(tasks);
     if (tasksError) throw tasksError;
     
-    alert('Complete workshop system seeded successfully!\n\n✅ 2 Teams (PR & TR)\n✅ 4 Technicians\n✅ 3 Sample Tasks\n\nData is now stored in Supabase database!');
+    alert('Complete workshop system seeded successfully!\n\n✅ 2 Teams (PR & TR)\n✅ 4 Technicians\n✅ 70+ Comprehensive Repair Skills\n\n📱 iPhone, Samsung, iPad, MacBook\n🎮 PlayStation, Xbox, Nintendo Switch\n⌚ Apple Watch, AirPods, Headphones\n🔧 Core Safety, Diagnostic, Data Recovery\n\nData is now stored in Supabase database!');
   } catch (error) {
     alert('Error seeding system: ' + error.message);
   }

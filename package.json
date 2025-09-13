@@ -1,0 +1,11 @@
+{
+  "name": "techskills-workshop",
+  "version": "1.0.0",
+  "description": "PR/TR Workshop Training System",
+  "scripts": {
+    "build": "echo 'Static site - no build needed'"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}

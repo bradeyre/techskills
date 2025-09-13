@@ -60,6 +60,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // Initialize Supabase client
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Test Supabase connection
+console.log('Supabase client initialized:', { url: SUPABASE_URL });
+
 /* Simple authentication system */
 const auth = {
   currentUser: null,
@@ -718,23 +721,8 @@ function importJSON(ev){
 }
 
 async function seedCatalog(){
-  // Just refresh the data - it should already be in the database
-  try {
-    const { data: tasks, error } = await supabase.from('tasks').select('*');
-    if (error) throw error;
-    
-    state.tasks = tasks || [];
-    console.log('Loaded tasks from database:', state.tasks.length);
-    
-    // Re-render if we're on the tasks tab
-    if (!document.getElementById('tab-tasks').hidden) {
-      renderTasks();
-    }
-    
-    alert(`✅ Refreshed skills data!\n\nFound ${state.tasks.length} repair skills in database.`);
-  } catch (error) {
-    alert('Error loading skills: ' + error.message);
-  }
+  // This function is no longer needed - data loads automatically
+  alert('✅ Skills are loaded automatically from your Supabase database!\n\nNo manual seeding required.');
 }
 
 async function seedEverything(){
@@ -773,33 +761,40 @@ async function attach(){
   
   // Load data directly from Supabase
   try {
-    // Load technicians
-    const { data: techs } = await supabase.from('technicians').select('*');
-    state.techs = techs || [];
-    if(!document.getElementById('tab-techs').hidden) renderTechs();
+    console.log('Loading data from Supabase...');
     
-    // Load tasks
-    const { data: tasks } = await supabase.from('tasks').select('*');
-    state.tasks = tasks || [];
-    console.log('Loaded tasks directly:', state.tasks.length);
-    if(!document.getElementById('tab-tasks').hidden) renderTasks();
+    // Load all data in parallel
+    const [techsResult, tasksResult, assessResult, teamsResult] = await Promise.all([
+      supabase.from('technicians').select('*'),
+      supabase.from('tasks').select('*'),
+      supabase.from('assessments').select('*'),
+      supabase.from('teams').select('*')
+    ]);
     
-    // Load assessments
-    const { data: assess } = await supabase.from('assessments').select('*');
-    state.assess = assess || [];
-    if(!document.getElementById('tab-assess').hidden) renderAssess();
+    // Update state with loaded data
+    state.techs = techsResult.data || [];
+    state.tasks = tasksResult.data || [];
+    state.assess = assessResult.data || [];
+    state.teams = teamsResult.data || [];
     
-    // Load teams
-    const { data: teams } = await supabase.from('teams').select('*');
-    state.teams = teams || [];
-    if(!document.getElementById('tab-teams').hidden) renderTeams();
+    console.log('Data loaded successfully:', {
+      technicians: state.techs.length,
+      tasks: state.tasks.length,
+      assessments: state.assess.length,
+      teams: state.teams.length
+    });
     
-    // Re-render dashboard and matrix
+    // Re-render all views
     renderDash();
     renderMatrix();
+    if(!document.getElementById('tab-techs').hidden) renderTechs();
+    if(!document.getElementById('tab-tasks').hidden) renderTasks();
+    if(!document.getElementById('tab-assess').hidden) renderAssess();
+    if(!document.getElementById('tab-teams').hidden) renderTeams();
     
   } catch (error) {
     console.error('Error loading data:', error);
+    alert('Error loading data from database: ' + error.message);
   }
 }
 

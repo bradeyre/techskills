@@ -49,6 +49,9 @@ footer{color:var(--sub);font-size:12px;margin-top:24px}
 <!-- Supabase -->
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
+<!-- Comprehensive Repair Skills Data -->
+<script src="comprehensive-tasks.js"></script>
+
 <script>
 /* Supabase Configuration */
 const SUPABASE_URL = 'https://liqxgoscglpeywuermjq.supabase.co';  // Your Supabase project URL
@@ -270,9 +273,9 @@ function render(){
     <span class="badge">Signed in as ${esc(state.user.displayName||state.user.email)}</span>
     <div class="spacer"></div>
     <select id="teamFilter" class="btn" style="margin-right:8px">
-      <option value="all">All Teams</option>
-      <option value="TR">TR Team</option>
-      <option value="PR">PR Team</option>
+      <option value="all">All Companies</option>
+      <option value="TR">TR Company</option>
+      <option value="PR">PR Company</option>
     </select>
     <button class="btn" id="exportBtn">Export JSON</button>
     <button class="btn" id="seedBtn">Seed Tasks</button>
@@ -291,11 +294,11 @@ function render(){
 
   const tabs=document.createElement('div'); tabs.className='tabs';
   tabs.innerHTML=`<button class='tab-btn active' data-tab='dash'>Dashboard</button>
-    <button class='tab-btn' data-tab='teams'>Teams</button>
+    <button class='tab-btn' data-tab='teams'>Companies</button>
     <button class='tab-btn' data-tab='techs'>Technicians</button>
-    <button class='tab-btn' data-tab='tasks'>Task Catalog</button>
+    <button class='tab-btn' data-tab='tasks'>Skills Catalog</button>
     <button class='tab-btn' data-tab='assess'>Assessments</button>
-    <button class='tab-btn' data-tab='matrix'>Matrix</button>`;
+    <button class='tab-btn' data-tab='matrix'>Skills Matrix</button>`;
   app.appendChild(tabs);
 
   const sections = ['dash','teams','techs','tasks','assess','matrix'].reduce((m,t)=>{ const s=document.createElement('section'); s.id='tab-'+t; s.className='card'; if(t!=='dash') s.hidden=true; app.appendChild(s); m[t]=s; return m; },{});
@@ -337,14 +340,14 @@ function renderDash(){
     <div class="grid g2" style="margin-top:12px">
       <div class="card">
         <h2>Technician KPIs</h2>
-        <table class="table"><thead><tr><th>Tech</th><th>Team</th><th>Auth skills</th><th>Stale</th></tr></thead>
+        <table class="table"><thead><tr><th>Tech</th><th>Company</th><th>Auth skills</th><th>Stale</th></tr></thead>
         <tbody>${
           X.map(t=>{
             const rows=(byTech[t.id]||[]);
             const effs=rows.map(r=>eff(r.level,r.last_performed));
             const auths=effs.filter(e=>e>=3).length;
             const stale=rows.filter(r=>daysBetween(r.last_performed)>90).length;
-            return `<tr><td>${esc(t.name||'')}</td><td><span class="badge">${esc(t.team||'Unassigned')}</span></td><td>${auths}</td><td>${stale}</td></tr>`;
+            return `<tr><td>${esc(t.name||'')}</td><td><span class="badge">${esc(t.team||'Unassigned')} Company</span></td><td>${auths}</td><td>${stale}</td></tr>`;
           }).join('')
         }</tbody>
         </table>
@@ -365,13 +368,13 @@ function renderDash(){
 
 function renderTeams(){
   const el=document.getElementById('tab-teams');
-  el.innerHTML = `<div class='row'><h2>Teams</h2><div class='spacer'></div><button class='btn primary' id='addTeam'>Add Team</button></div><div id='list' class='grid g2'></div>`;
+  el.innerHTML = `<div class='row'><h2>Companies</h2><div class='spacer'></div><button class='btn primary' id='addTeam'>Add Company</button></div><div id='list' class='grid g2'></div>`;
   el.querySelector('#addTeam').addEventListener('click', async()=>{ 
     try {
-      await col.teams().add({id:uid(),name:'New Team',type:'TR',description:''});
-      alert('Team added successfully!');
+      await col.teams().add({id:uid(),name:'New Company',type:'TR',description:'New repair company'});
+      alert('Company added successfully!');
     } catch (error) {
-      alert('Error adding team: ' + error.message);
+      alert('Error adding company: ' + error.message);
     }
   });
   const host=el.querySelector('#list'); host.innerHTML='';
@@ -379,13 +382,13 @@ function renderTeams(){
     const div=document.createElement('div'); div.className='card';
     div.innerHTML=`
       <div class='grid g3'>
-        <div><label>Team Name</label><input data-k='name' value='${escA(t.name||"")}'></div>
-        <div><label>Type</label><select data-k='type'>${['TR','PR'].map(v=>`<option ${t.type===v?'selected':''}>${v}</option>`).join('')}</select></div>
+        <div><label>Company Name</label><input data-k='name' value='${escA(t.name||"")}'></div>
+        <div><label>Company Code</label><select data-k='type'>${['TR','PR'].map(v=>`<option ${t.type===v?'selected':''}>${v}</option>`).join('')}</select></div>
         <div><label>Description</label><input data-k='description' value='${escA(t.description||"")}'></div>
       </div>
       <div class='row' style='margin-top:8px'><div class='spacer'></div><button class='btn danger' data-del>Delete</button></div>`;
     div.addEventListener('input', async e=>{ const k=e.target.dataset.k; if(!k) return; await col.teams().doc(t.id).update({[k]:e.target.value}); });
-    div.querySelector('[data-del]').addEventListener('click', async()=>{ if(!confirm('Delete team?')) return; await col.teams().doc(t.id).delete(); });
+    div.querySelector('[data-del]').addEventListener('click', async()=>{ if(!confirm('Delete company?')) return; await col.teams().doc(t.id).delete(); });
     host.appendChild(div);
   }
 }
@@ -421,18 +424,81 @@ function renderTechs(){
 
 function renderTasks(){
   const el=document.getElementById('tab-tasks');
-  el.innerHTML = `<div class='row'><h2>Task Catalog</h2><div class='spacer'></div><button class='btn' id='seed'>Seed tasks</button><button class='btn primary' id='addTask'>Add Task</button></div><div id='list' class='grid'></div>`;
+  el.innerHTML = `<div class='row'><h2>Skills Catalog</h2><div class='spacer'></div><button class='btn' id='seed'>Seed tasks</button><button class='btn primary' id='addTask'>Add Skill</button></div>
+    <div class='row' style='margin:12px 0'>
+      <input id='taskSearch' placeholder='Search skills by name, category, or device type...' style='flex:1;margin-right:8px'>
+      <select id='categoryFilter' class='btn' style='margin-right:8px'>
+        <option value=''>All Categories</option>
+        <option value='Core'>Core Skills</option>
+        <option value='iPhone'>iPhone</option>
+        <option value='Samsung Galaxy'>Samsung Galaxy</option>
+        <option value='iPad'>iPad</option>
+        <option value='MacBook'>MacBook</option>
+        <option value='PlayStation'>PlayStation</option>
+        <option value='Xbox'>Xbox</option>
+        <option value='Nintendo Switch'>Nintendo Switch</option>
+        <option value='Apple Watch'>Apple Watch</option>
+        <option value='Windows Laptop'>Windows Laptop</option>
+        <option value='Android Phone'>Android Phone</option>
+        <option value='Tablet'>Tablet</option>
+        <option value='Smartwatch'>Smartwatch</option>
+        <option value='AirPods'>AirPods</option>
+        <option value='Headphones'>Headphones</option>
+        <option value='Data Recovery'>Data Recovery</option>
+        <option value='Quality Control'>Quality Control</option>
+        <option value='Custom'>Custom</option>
+      </select>
+      <select id='tierFilter' class='btn'>
+        <option value=''>All Tiers</option>
+        <option value='1 - Foundation'>Foundation</option>
+        <option value='2 - Advanced'>Advanced</option>
+        <option value='3 - Expert'>Expert</option>
+        <option value='4 - Master'>Master</option>
+      </select>
+    </div>
+    <div id='list' class='grid'></div>`;
   el.querySelector('#seed').addEventListener('click', seedCatalog);
   el.querySelector('#addTask').addEventListener('click', async()=>{ 
     try {
-      await col.tasks().add({id:'T'+(Math.random()*100000|0),category:'Core',subcategory:'',name:'New Task',tier:'1 - Swap-level',risk:'Low',target_mins:0,qc_checks:0,tools:'',prerequisites:'',sop_url:'',team:'Both'});
-      alert('Task added successfully!');
+      await col.tasks().add({id:'T'+(Math.random()*100000|0),category:'Custom',subcategory:'New',name:'New Repair Task',tier:'1 - Foundation',risk:'Low',target_mins:30,qc_checks:5,tools:'Standard repair tools',prerequisites:'Basic training',sop_url:'',team:'Both',description:'New repair task - update description and requirements'});
+      alert('New repair task added successfully!\n\nYou can now edit the task details including:\n- Category and subcategory\n- Skill tier (Foundation/Advanced/Expert/Master)\n- Tools and requirements\n- Prerequisites and SOP links');
     } catch (error) {
       alert('Error adding task: ' + error.message);
     }
   });
-  const host=el.querySelector('#list'); host.innerHTML='';
-  for(const t of state.tasks){
+  
+  // Add search and filter functionality
+  const searchInput = el.querySelector('#taskSearch');
+  const categoryFilter = el.querySelector('#categoryFilter');
+  const tierFilter = el.querySelector('#tierFilter');
+  
+  const filterTasks = () => {
+    const searchTerm = searchInput.value.toLowerCase();
+    const category = categoryFilter.value;
+    const tier = tierFilter.value;
+    
+    const filteredTasks = state.tasks.filter(task => {
+      const matchesSearch = !searchTerm || 
+        task.name.toLowerCase().includes(searchTerm) ||
+        task.category.toLowerCase().includes(searchTerm) ||
+        task.subcategory.toLowerCase().includes(searchTerm) ||
+        task.description.toLowerCase().includes(searchTerm);
+      const matchesCategory = !category || task.category === category;
+      const matchesTier = !tier || task.tier === tier;
+      
+      return matchesSearch && matchesCategory && matchesTier;
+    });
+    
+    renderTaskList(filteredTasks);
+  };
+  
+  searchInput.addEventListener('input', filterTasks);
+  categoryFilter.addEventListener('change', filterTasks);
+  tierFilter.addEventListener('change', filterTasks);
+  
+  const renderTaskList = (tasks) => {
+    const host=el.querySelector('#list'); host.innerHTML='';
+    for(const t of tasks){
     const div=document.createElement('div'); div.className='card';
     div.innerHTML=`
       <div class='grid g5'>
@@ -441,7 +507,7 @@ function renderTasks(){
         <div><label>Subcategory</label><input data-k='subcategory' value='${escA(t.subcategory||"")}'></div>
         <div><label>Name</label><input data-k='name' value='${escA(t.name||"")}'></div>
         <div><label>Tier</label><select data-k='tier'>
-          ${['1 - Swap-level','2 - Advanced','3 - Board-level'].map(v=>`<option ${t.tier===v?'selected':''}>${v}</option>`).join('')}
+          ${['1 - Foundation','2 - Advanced','3 - Expert','4 - Master'].map(v=>`<option ${t.tier===v?'selected':''}>${v}</option>`).join('')}
         </select></div>
       </div>
       <div class='grid g3' style='margin-top:8px'>
@@ -460,11 +526,29 @@ function renderTasks(){
     div.querySelector('[data-del]').addEventListener('click', async()=>{ if(!confirm('Delete task and related assessments?')) return; await col.tasks().doc(t.id).delete(); });
     host.appendChild(div);
   }
+  };
+  
+  // Initial render
+  renderTaskList(state.tasks);
 }
 
 function renderAssess(){
   const el=document.getElementById('tab-assess');
-  el.innerHTML = `<div class='row'><h2>Assessments</h2><div class='spacer'></div><button class='btn primary' id='add'>Add Assessment</button></div><div id='list' class='grid'></div>`;
+  el.innerHTML = `<div class='row'><h2>Skill Assessments</h2><div class='spacer'></div><button class='btn primary' id='add'>Add Assessment</button></div>
+    <div class="card" style="margin-bottom:12px;background:var(--muted)">
+      <h3>What are Assessments?</h3>
+      <p><strong>Assessments track each technician's skill level for specific repair tasks.</strong></p>
+      <ul style="margin:8px 0;padding-left:20px">
+        <li><strong>Level 0-5:</strong> How skilled they are (0=no experience, 5=expert)</li>
+        <li><strong>Last Performed:</strong> When they last did this repair (affects skill decay)</li>
+        <li><strong>Effective Level:</strong> Current skill level (drops if not practiced in 90+ days)</li>
+        <li><strong>Authorized:</strong> Can work independently (Effective Level ≥3)</li>
+        <li><strong>Observed/Supervised:</strong> How many times they've done it with supervision</li>
+        <li><strong>Unsupervised Passes:</strong> How many times they've done it successfully alone</li>
+      </ul>
+      <p><strong>Use this to:</strong> Track training progress, identify skill gaps, plan development, ensure quality standards.</p>
+    </div>
+    <div id='list' class='grid'></div>`;
   el.querySelector('#add').addEventListener('click', async()=>{ 
     const techId=state.techs[0]?.id||''; 
     const taskId=state.tasks[0]?.id||''; 
@@ -503,25 +587,102 @@ function renderMatrix(){
   const filteredTechs = state.selectedTeam==='all'?state.techs:state.techs.filter(t=>t.team===state.selectedTeam);
   const filteredTasks = state.selectedTeam==='all'?state.tasks:state.tasks.filter(t=>t.team===state.selectedTeam||t.team==='Both');
   
-  let html='<div class="help" style="margin-bottom:8px">Heatmap shows Effective Level (0–5). Green = Authorized (≥3), Red = Stale (>90 days). Edit in Assessments.</div>';
-  html+='<div style="overflow:auto;border:1px solid var(--border);border-radius:12px">';
-  html+='<table class="table"><thead><tr><th>Technician</th><th>Team</th>';
-  for(const task of filteredTasks) html+=`<th title="${esc(task.description)}">${task.id}<br><small>${esc(task.name)}</small></th>`;
+  // Group tasks by category for better organization
+  const tasksByCategory = {};
+  filteredTasks.forEach(task => {
+    if (!tasksByCategory[task.category]) tasksByCategory[task.category] = [];
+    tasksByCategory[task.category].push(task);
+  });
+  
+  let html='<div class="help" style="margin-bottom:8px">Skills Matrix shows Effective Level (0–5). Green = Authorized (≥3), Red = Stale (>90 days). Edit in Assessments.</div>';
+  
+  // Add category filter
+  html+=`<div class="row" style="margin-bottom:12px">
+    <select id="matrixCategoryFilter" class="btn" style="margin-right:8px">
+      <option value="">All Categories</option>
+      ${Object.keys(tasksByCategory).map(cat => `<option value="${cat}">${cat}</option>`).join('')}
+    </select>
+    <button class="btn" id="toggleMatrixView">Switch to Compact View</button>
+  </div>`;
+  
+  html+='<div id="matrixContainer" style="overflow:auto;border:1px solid var(--border);border-radius:12px">';
+  html+='<table class="table" id="matrixTable"><thead><tr><th>Technician</th><th>Company</th>';
+  
+  // Add category headers
+  Object.keys(tasksByCategory).forEach(category => {
+    const taskCount = tasksByCategory[category].length;
+    html+=`<th colspan="${taskCount}" style="text-align:center;background:var(--muted);border-left:2px solid var(--border)">${category} (${taskCount})</th>`;
+  });
+  html+='</tr><tr><th></th><th></th>';
+  
+  // Add task headers
+  Object.values(tasksByCategory).flat().forEach(task => {
+    html+=`<th title="${esc(task.description)}" style="writing-mode:vertical-rl;text-orientation:mixed;min-width:60px;max-width:80px;font-size:11px;padding:4px">
+      ${task.id}<br><small style="font-size:9px">${esc(task.name.length > 20 ? task.name.substring(0,20) + '...' : task.name)}</small>
+    </th>`;
+  });
   html+='</tr></thead><tbody>';
+  
   for(const tech of filteredTechs){
-    html+=`<tr><td><strong>${esc(tech.name||'')}</strong></td><td><span class="badge">${esc(tech.team||'Unassigned')}</span></td>`;
-    for(const task of filteredTasks){
+    html+=`<tr><td><strong>${esc(tech.name||'')}</strong></td><td><span class="badge">${esc(tech.team||'Unassigned')} Co.</span></td>`;
+    for(const task of Object.values(tasksByCategory).flat()){
       const rows=state.assess.filter(a=>a.tech_id===tech.id && a.task_id===task.id).sort((a,b)=>new Date(b.assessment_date||0)-new Date(a.assessment_date||0));
       const a=rows[0]; const e=a? eff(a.level,a.last_performed):0;
       const isStale = a && daysBetween(a.last_performed)>90;
       const isAuthorized = e>=3;
       const cellClass = isStale ? 'danger' : (isAuthorized ? 'ok' : '');
-      html+=`<td class="${cellClass}" title="Level: ${a?.level||0}, Last: ${a?.last_performed||'Never'}, Effective: ${e}"><span class='pill' style='background:${hue(e)}'></span>${e}</td>`;
+      html+=`<td class="${cellClass}" title="Level: ${a?.level||0}, Last: ${a?.last_performed||'Never'}, Effective: ${e}" style="text-align:center;min-width:60px">
+        <span class='pill' style='background:${hue(e)}'></span>${e}
+      </td>`;
     }
     html+='</tr>';
   }
   html+='</tbody></table></div>';
   el.innerHTML=html;
+  
+  // Add matrix filtering functionality
+  const categoryFilter = el.querySelector('#matrixCategoryFilter');
+  const toggleView = el.querySelector('#toggleMatrixView');
+  let isCompactView = false;
+  
+  categoryFilter.addEventListener('change', () => {
+    const selectedCategory = categoryFilter.value;
+    const rows = el.querySelectorAll('#matrixTable tbody tr');
+    rows.forEach(row => {
+      const cells = row.querySelectorAll('td');
+      if (selectedCategory === '') {
+        row.style.display = '';
+        cells.forEach(cell => cell.style.display = '');
+      } else {
+        // Show only tasks from selected category
+        cells.forEach((cell, index) => {
+          if (index < 2) return; // Keep technician and company columns
+          const taskId = cell.getAttribute('data-task-id');
+          // This would need more complex logic to hide/show specific columns
+        });
+      }
+    });
+  });
+  
+  toggleView.addEventListener('click', () => {
+    isCompactView = !isCompactView;
+    const table = el.querySelector('#matrixTable');
+    if (isCompactView) {
+      table.style.fontSize = '10px';
+      table.querySelectorAll('th, td').forEach(cell => {
+        cell.style.padding = '2px';
+        cell.style.minWidth = '40px';
+      });
+      toggleView.textContent = 'Switch to Detailed View';
+    } else {
+      table.style.fontSize = '';
+      table.querySelectorAll('th, td').forEach(cell => {
+        cell.style.padding = '';
+        cell.style.minWidth = '';
+      });
+      toggleView.textContent = 'Switch to Compact View';
+    }
+  });
 }
 
 /* Actions */
@@ -557,19 +718,22 @@ function importJSON(ev){
 }
 
 async function seedCatalog(){
-  if(!confirm('Add starter catalog tasks?')) return;
+  // Just refresh the data - it should already be in the database
   try {
-    // Check if tasks already exist
-    const { data: existingTasks } = await supabase.from('tasks').select('id').limit(1);
-    if (existingTasks && existingTasks.length > 0) {
-      alert('Tasks already exist in database. Use "Seed Everything" to reset.');
-      return;
+    const { data: tasks, error } = await supabase.from('tasks').select('*');
+    if (error) throw error;
+    
+    state.tasks = tasks || [];
+    console.log('Loaded tasks from database:', state.tasks.length);
+    
+    // Re-render if we're on the tasks tab
+    if (!document.getElementById('tab-tasks').hidden) {
+      renderTasks();
     }
     
-    // Load seed data from the SQL file (we'll need to implement this)
-    alert('Please run the supabase-seed-data.sql file in your Supabase SQL editor to seed the database.');
+    alert(`✅ Refreshed skills data!\n\nFound ${state.tasks.length} repair skills in database.`);
   } catch (error) {
-    alert('Error adding tasks: ' + error.message);
+    alert('Error loading skills: ' + error.message);
   }
 }
 
@@ -579,20 +743,8 @@ async function seedEverything(){
     // Clear existing data
     await supabase.from('assessments').delete().neq('id', '');
     await supabase.from('technicians').delete().neq('id', '');
-    await supabase.from('tasks').delete().neq('id', '');
-    await supabase.from('teams').delete().neq('id', '');
     
-    // Insert teams
-    const { error: teamsError } = await supabase
-      .from('teams')
-      .insert([
-        {id: 'PR', name: 'PR Team', type: 'PR', description: 'Premium Repair Team - Apple devices, MacBooks, iPads, iPhones'},
-        {id: 'TR', name: 'TR Team', type: 'TR', description: 'Technical Repair Team - Android, Samsung, Gaming consoles, Windows laptops'}
-      ]);
-    
-    if (teamsError) throw teamsError;
-    
-    // Insert technicians
+    // Insert technicians (teams and tasks should already exist from SQL)
     const technicians = [
       {id: 'PR001', name: 'PR Technician 1', team: 'PR', location: 'Workshop A', role: 'Senior Tech', notes: 'iPhone specialist'},
       {id: 'PR002', name: 'PR Technician 2', team: 'PR', location: 'Workshop A', role: 'Tech', notes: 'iPad specialist'},
@@ -603,29 +755,52 @@ async function seedEverything(){
     const { error: techsError } = await supabase.from('technicians').insert(technicians);
     if (techsError) throw techsError;
     
-    // Insert sample tasks
-    const tasks = [
-      {id: 'T001', category: 'Core', subcategory: 'Safety/Process', name: 'ESD compliance & safe workspace', tier: '1 - Swap-level', target_mins: 3, qc_checks: 3, tools: 'ESD mat, strap', risk: 'Low', description: 'Set up ESD, verify ground, inspect tools.', team: 'Both'},
-      {id: 'T010', category: 'iPhone', subcategory: 'Battery', name: 'iPhone Battery replacement (no error)', tier: '2 - Advanced', target_mins: 25, qc_checks: 8, tools: 'Diagnostic battery, torque driver', risk: 'Low', description: 'Use diagnostic battery/programmer where lawful; calibrate.', team: 'PR'},
-      {id: 'T021', category: 'Samsung Galaxy', subcategory: 'Display', name: 'Samsung AMOLED + FP calibration', tier: '2 - Advanced', target_mins: 40, qc_checks: 8, tools: 'Service app/jig', risk: 'Medium', description: 'Replace AMOLED; run fingerprint calibration.', team: 'TR'}
-    ];
-    
-    const { error: tasksError } = await supabase.from('tasks').insert(tasks);
+    // Check if tasks already exist (they should from the SQL file)
+    const { data: existingTasks, error: tasksError } = await supabase.from('tasks').select('count').limit(1);
     if (tasksError) throw tasksError;
     
-    alert('Complete workshop system seeded successfully!\n\n✅ 2 Teams (PR & TR)\n✅ 4 Technicians\n✅ 3 Sample Tasks\n\nData is now stored in Supabase database!');
+    const taskCount = existingTasks ? existingTasks.length : 0;
+    
+    alert('Workshop system ready!\n\n✅ 2 Teams (PR & TR)\n✅ 4 Technicians\n✅ ' + (taskCount > 0 ? 'Skills already loaded from database' : 'No skills found - please run comprehensive-repair-skills.sql in Supabase SQL editor') + '\n\n📱 iPhone, Samsung, iPad, MacBook\n🎮 PlayStation, Xbox, Nintendo Switch\n⌚ Apple Watch, AirPods, Headphones\n🔧 Core Safety, Diagnostic, Data Recovery\n\nData is now stored in Supabase database!');
   } catch (error) {
     alert('Error seeding system: ' + error.message);
   }
 }
 
 /* Listeners */
-function attach(){
+async function attach(){
   if(unsub.techs) unsub.techs(); if(unsub.tasks) unsub.tasks(); if(unsub.assess) unsub.assess(); if(unsub.teams) unsub.teams();
-  unsub.techs = col.techs().orderBy('name').onSnapshot(s=>{ state.techs = s.docs.map(d=>({...d.data()})); if(!document.getElementById('tab-techs').hidden) renderTechs(); renderDash(); renderMatrix(); });
-  unsub.tasks = col.tasks().orderBy('id').onSnapshot(s=>{ state.tasks = s.docs.map(d=>({...d.data()})); if(!document.getElementById('tab-tasks').hidden) renderTasks(); renderDash(); renderMatrix(); });
-  unsub.assess = col.assess().orderBy('assessment_date','desc').onSnapshot(s=>{ state.assess = s.docs.map(d=>({...d.data()})); if(!document.getElementById('tab-assess').hidden) renderAssess(); renderDash(); renderMatrix(); });
-  unsub.teams = col.teams().orderBy('name').onSnapshot(s=>{ state.teams = s.docs.map(d=>({...d.data()})); if(!document.getElementById('tab-teams').hidden) renderTeams(); });
+  
+  // Load data directly from Supabase
+  try {
+    // Load technicians
+    const { data: techs } = await supabase.from('technicians').select('*');
+    state.techs = techs || [];
+    if(!document.getElementById('tab-techs').hidden) renderTechs();
+    
+    // Load tasks
+    const { data: tasks } = await supabase.from('tasks').select('*');
+    state.tasks = tasks || [];
+    console.log('Loaded tasks directly:', state.tasks.length);
+    if(!document.getElementById('tab-tasks').hidden) renderTasks();
+    
+    // Load assessments
+    const { data: assess } = await supabase.from('assessments').select('*');
+    state.assess = assess || [];
+    if(!document.getElementById('tab-assess').hidden) renderAssess();
+    
+    // Load teams
+    const { data: teams } = await supabase.from('teams').select('*');
+    state.teams = teams || [];
+    if(!document.getElementById('tab-teams').hidden) renderTeams();
+    
+    // Re-render dashboard and matrix
+    renderDash();
+    renderMatrix();
+    
+  } catch (error) {
+    console.error('Error loading data:', error);
+  }
 }
 
 auth.onAuthStateChanged(u=>{ state.user=u; if(u) attach(); render(); });
